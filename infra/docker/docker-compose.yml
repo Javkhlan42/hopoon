@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:13-3.1
+    container_name: hopon-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hopon
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./db/seeds:/docker-entrypoint-initdb.d/seeds
+    networks:
+      - hopon-network
+
+  redis:
+    image: redis:6-alpine
+    container_name: hopon-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hopon-network
+
+  api-gateway:
+    build:
+      context: ../../
+      dockerfile: infra/docker/api-gateway.Dockerfile
+    container_name: hopon-api-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: hopon
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - hopon-network
+    volumes:
+      - ../../apps/services/api-gateway:/app/apps/services/api-gateway
+      - /app/node_modules
+
+  web:
+    build:
+      context: ../../
+      dockerfile: infra/docker/web.Dockerfile
+    container_name: hopon-web
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+    ports:
+      - "4200:4200"
+    depends_on:
+      - api-gateway
+    networks:
+      - hopon-network
+    volumes:
+      - ../../apps/hop-on:/app/apps/hop-on
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  hopon-network:
+    driver: bridge

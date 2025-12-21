@@ -1,0 +1,127 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+enum UserRole {
+  driver
+  passenger
+  both
+  admin
+}
+
+enum VerificationStatus {
+  unverified
+  pending
+  verified
+  rejected
+}
+
+enum RideStatus {
+  draft
+  active
+  full
+  in_progress
+  completed
+  cancelled
+}
+
+enum BookingStatus {
+  pending
+  approved
+  rejected
+  cancelled
+  completed
+}
+
+model User {
+  id                 String             @id @default(uuid()) @db.Uuid
+  phone              String             @unique @db.VarChar(20)
+  email              String?            @unique @db.VarChar(255)
+  name               String             @db.VarChar(100)
+  role               UserRole           @default(passenger)
+  verificationStatus VerificationStatus @default(unverified)
+  rating             Decimal?           @default(0.00) @db.Decimal(3, 2)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  ridesAsDriver Ride[]     @relation("DriverRides")
+  bookings      Booking[]  @relation("PassengerBookings")
+  sentMessages  Message[]  @relation("SentMessages")
+
+  @@map("users")
+}
+
+model Ride {
+  id                 String     @id @default(uuid()) @db.Uuid
+  driverId           String     @map("driver_id") @db.Uuid
+  originLat          Decimal    @map("origin_lat") @db.Decimal(10, 8)
+  originLng          Decimal    @map("origin_lng") @db.Decimal(11, 8)
+  originAddress      String     @map("origin_address")
+  destinationLat     Decimal    @map("destination_lat") @db.Decimal(10, 8)
+  destinationLng     Decimal    @map("destination_lng") @db.Decimal(11, 8)
+  destinationAddress String     @map("destination_address")
+  departureTime      DateTime   @map("departure_time") @db.Timestamptz(3)
+  availableSeats     Int        @map("available_seats")
+  pricePerSeat       Decimal    @map("price_per_seat") @db.Decimal(10, 2)
+  status             RideStatus @default(active)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  driver   User      @relation("DriverRides", fields: [driverId], references: [id])
+  bookings Booking[] @relation("RideBookings")
+
+  @@index([driverId])
+  @@index([status])
+  @@index([departureTime])
+  @@map("rides")
+}
+
+model Booking {
+  id          String        @id @default(uuid()) @db.Uuid
+  rideId      String        @map("ride_id") @db.Uuid
+  passengerId String        @map("passenger_id") @db.Uuid
+  seats       Int           @default(1)
+  status      BookingStatus @default(pending)
+  price       Decimal       @db.Decimal(10, 2)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  ride      Ride @relation("RideBookings", fields: [rideId], references: [id])
+  passenger User @relation("PassengerBookings", fields: [passengerId], references: [id])
+
+  @@index([rideId])
+  @@index([passengerId])
+  @@map("bookings")
+}
+
+model ChatRoom {
+  id        String    @id @default(uuid()) @db.Uuid
+  rideId    String    @map("ride_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  messages  Message[] @relation("RoomMessages")
+
+  @@map("chat_rooms")
+}
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  chatRoomId String   @map("chat_room_id") @db.Uuid
+  senderId   String   @map("sender_id") @db.Uuid
+  content    String
+  type       String   @default("text") @db.VarChar(20)
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  chatRoom ChatRoom @relation("RoomMessages", fields: [chatRoomId], references: [id])
+  sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([chatRoomId])
+  @@index([senderId])
+  @@map("messages")
+}

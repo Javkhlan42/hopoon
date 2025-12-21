@@ -1,0 +1,12 @@
+{
+  "name": "@hop-on/ui-kit",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "react": "^19.0.0"
+  }
+}
