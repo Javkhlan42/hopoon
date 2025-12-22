@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum UserRole {
   DRIVER = 'driver',
@@ -34,10 +40,14 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.PASSENGER })
   role: UserRole;
 
-  @Column({ type: 'enum', enum: VerificationStatus, default: VerificationStatus.UNVERIFIED })
+  @Column({
+    type: 'enum',
+    enum: VerificationStatus,
+    default: VerificationStatus.UNVERIFIED,
+  })
   verification_status: VerificationStatus;
 
-  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.00 })
+  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.0 })
   rating: number;
 
   @Column({ nullable: true })

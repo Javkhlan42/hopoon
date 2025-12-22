@@ -1,8 +1,111 @@
 # HopOn
 
+Ride-sharing platform monorepo built with Nx, NestJS, and Next.js.
+
+## 🚀 Quick Start (Running on New Device)
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Git
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/Bagee1/hope-on.git
+cd hop-on
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Environment Setup
+
+The `.env` files are already configured with Neon database credentials. All services will connect to the cloud database automatically.
+
+**Services:**
+- Auth Service (Port 3001)
+- API Gateway (Port 3000)
+- Ride Service (Port 3003)
+- Booking Service (Port 3004)
+- Payment Service (Port 3005)
+- Chat Service (Port 3006)
+- Notification Service (Port 3007)
+
+### 4. Start All Services
+
+**Windows:**
+```powershell
+.\start-all-services.ps1
+```
+
+**Linux/Mac:**
+```bash
+# Start each service manually in separate terminals:
+cd apps/services/auth-service && npm run dev
+cd apps/services/api-gateway && npm run dev
+cd apps/services/ride-service && npm run dev
+cd apps/services/booking-service && npm run dev
+cd apps/services/payment-service && npm run dev
+cd apps/services/chat-service && npm run dev
+cd apps/services/notification-service && npm run dev
+```
+
+### 5. Test the Services
+
+```powershell
+# Check if services are running
+curl http://localhost:3001/auth/me
+
+# Register a new user
+$body = @{phone='+97699999999';email='test@example.com';password='password123';name='Test User'} | ConvertTo-Json
+Invoke-RestMethod -Uri http://localhost:3001/auth/register -Method POST -Body $body -ContentType 'application/json'
+
+# Login
+$body = @{phone='+97699999999';password='password123'} | ConvertTo-Json
+Invoke-RestMethod -Uri http://localhost:3001/auth/login -Method POST -Body $body -ContentType 'application/json'
+```
+
+## 📚 Architecture
+
+This is a microservices architecture with:
+- **Frontend:** Next.js app (`apps/hop-on`)
+- **Backend Services:** 7 NestJS microservices
+- **Database:** Neon PostgreSQL (Cloud)
+- **Shared Packages:** TypeScript types, utilities, UI components
+
+## 🔧 Development
+
+### Run Individual Service
+
+```bash
+cd apps/services/auth-service
+npm run dev
+```
+
+### Database Management
+
+```bash
+# Reseed database with test data
+cd infra/db
+node neon-reseed.js
+```
+
+## 📖 Documentation
+
+- [Architecture Overview](doc/Architecture_Overview.md)
+- [Backend Services](doc/BACKEND_SERVICES.md)
+- [API Documentation](doc/API_Documentation.md)
+- [Database Setup](infra/db/README.md)
+
+---
+
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+✨ Built with [Nx workspace](https://nx.dev) ✨
 
 [Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
 
