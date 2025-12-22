@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -12,6 +13,9 @@ import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -21,6 +25,9 @@ import { JwtStrategy } from './auth/jwt.strategy';
       database: process.env.DB_NAME || 'hopon',
       entities: [Payment, Wallet],
       synchronize: false,
+      ssl: process.env.DB_HOST?.includes('neon.tech')
+        ? { rejectUnauthorized: false }
+        : false,
     }),
     TypeOrmModule.forFeature([Payment, Wallet]),
     PassportModule,

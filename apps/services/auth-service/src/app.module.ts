@@ -14,7 +14,6 @@ import { LocalStrategy } from './auth/local.strategy';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -25,6 +24,9 @@ import { LocalStrategy } from './auth/local.strategy';
       database: process.env.DB_NAME || 'hopon',
       entities: [User],
       synchronize: false,
+      ssl: process.env.DB_HOST?.includes('neon.tech')
+        ? { rejectUnauthorized: false }
+        : false,
     }),
     TypeOrmModule.forFeature([User]),
     PassportModule,
