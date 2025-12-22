@@ -1,5 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { PaymentsController } from './payments/payments.controller';
+import { WalletController } from './wallet/wallet.controller';
+import { PaymentsService } from './payments/payments.service';
+import { WalletService } from './wallet/wallet.service';
+import { Payment } from './payments/payment.entity';
+import { Wallet } from './wallet/wallet.entity';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -10,9 +19,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'hopon',
-      autoLoadEntities: true,
+      entities: [Payment, Wallet],
       synchronize: false,
     }),
+    TypeOrmModule.forFeature([Payment, Wallet]),
+    PassportModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'hopon-secret-key',
+    }),
   ],
+  controllers: [PaymentsController, WalletController],
+  providers: [PaymentsService, WalletService, JwtStrategy],
 })
 export class AppModule {}

@@ -1,9 +1,22 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(3002);
-  console.log(`Ride Service running on: ${await app.getUrl()}`);
+  
+  app.enableCors();
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  const port = process.env.PORT || 3003;
+  await app.listen(port);
+  console.log(`🚗 Ride Service running on port ${port}`);
 }
+
 bootstrap();
