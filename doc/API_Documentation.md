@@ -38,7 +38,7 @@ The HopOn API provides a RESTful interface for the carpooling platform. All endp
 - `PUT` - Update existing resources
 - `PATCH` - Partial update of resources
 - `DELETE` - Remove resources
-
+update
 ---
 
 ## Authentication
