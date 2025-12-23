@@ -1,16 +1,16 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Automated Test Suite - Hope-On Platform
+    Бүрэн автомат тестийн скрипт - Hope-On Platform
 .DESCRIPTION
-    Runs Unit, Integration, Security tests automatically.
-    Checks services and runs tests in sequence.
+    Unit, Integration, Security тестүүдийг автоматаар ажиллуулна.
+    Service-үүд ажиллаж байгааг шалгаад, тестүүдийг дарааллаар ажиллуулна.
 .PARAMETER TestType
-    Test type: all, unit, integration, security
+    Тестийн төрөл: all, unit, integration, security
 .PARAMETER SkipServiceCheck
-    Skip service check
+    Service шалгалтыг алгасах
 .PARAMETER Verbose
-    Show detailed information
+    Дэлгэрэнгүй мэдээлэл харуулах
 .EXAMPLE
     .\run-all-tests.ps1
 .EXAMPLE
@@ -28,12 +28,12 @@ param(
     [switch]$SkipServiceCheck,
     
     [Parameter()]
-    [switch]$ShowDetails
+    [switch]$Verbose
 )
 
 $ErrorActionPreference = 'Continue'
 
-# Output functions
+# Өнгөтэй output функцүүд
 function Write-Success($message) {
     Write-Host "[OK] $message" -ForegroundColor Green
 }
@@ -60,32 +60,12 @@ function Show-TestDocumentation {
     )
     
     $percentage = [math]::Round(($PassedTests / $TotalTests) * 100, 1)
-    $failedTests = $TotalTests - $PassedTests
-    
-    # Test report tailbar beldeh
-    $report = @"
-
-========================================
-     TESTIIN TAILGAN - TEST REPORT
-========================================
-
-Ognooo: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
-Hugatsaa: $([math]::Round($Duration.TotalSeconds, 2)) sekund
-
-TEST-IIN DUN:
-  Niit Test:        $TotalTests
-  Amjilttai:        $PassedTests ($percentage%)
-  Aldaatai:         $failedTests
-
-========================================
-"@
-
-    Write-Host $report -ForegroundColor Cyan
     
     # Windows notification
-    $title = "Test duussan - $percentage% amjilttai"
-    $message = "Amjilttai: $PassedTests/$TotalTests`nHugatsaa: $([math]::Round($Duration.TotalSeconds, 1))s"
+    $title = "Hope-On Tests Complete"
+    $message = "Tests: $PassedTests/$TotalTests passed ($percentage%)`nDuration: $($Duration.TotalSeconds)s"
     
+    # Balloon notification
     Add-Type -AssemblyName System.Windows.Forms
     $notification = New-Object System.Windows.Forms.NotifyIcon
     $notification.Icon = [System.Drawing.SystemIcons]::Information
@@ -94,36 +74,27 @@ TEST-IIN DUN:
     $notification.Visible = $true
     $notification.ShowBalloonTip(5000)
     
-    # Delgerehgui medeelel
-    Write-Host "DELGEREHGUI MEDEELEL:" -ForegroundColor Yellow
+    # Documentation menu
     Write-Host ""
-    Write-Host "  1. QUICK_START.md           - Hurdan ehleh (5 minut)" -ForegroundColor White
-    Write-Host "  2. TEST_SUMMARY.md          - Test-iin dun, aldaanuud" -ForegroundColor White
-    Write-Host "  3. BACKEND_FIX_CHECKLIST.md - Backend zaswar" -ForegroundColor White
-    Write-Host "  4. README.md                - Delgerehgui zaawar" -ForegroundColor White
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host " Test Documentation Available:" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  1. QUICK_START.md           - Quick Start (5 min)" -ForegroundColor White
+    Write-Host "  2. TEST_SUMMARY.md          - Test Results & Errors" -ForegroundColor White
+    Write-Host "  3. BACKEND_FIX_CHECKLIST.md - Backend Fix Guide" -ForegroundColor White
+    Write-Host "  4. README.md                - Complete Documentation" -ForegroundColor White
     Write-Host ""
     
-    $choice = Read-Host "Barimtat neeh uu? (1-4 songoh, Enter=algasah)"
+    $choice = Read-Host "Open documentation? (1-4, Enter=skip)"
     
     $docDir = Split-Path -Parent $PSScriptRoot
     switch ($choice) {
-        "1" { 
-            Write-Success "QUICK_START.md neej baina..."
-            Start-Process "$docDir\QUICK_START.md" 
-        }
-        "2" { 
-            Write-Success "TEST_SUMMARY.md neej baina..."
-            Start-Process "$docDir\TEST_SUMMARY.md" 
-        }
-        "3" { 
-            Write-Success "BACKEND_FIX_CHECKLIST.md neej baina..."
-            Start-Process "$docDir\BACKEND_FIX_CHECKLIST.md" 
-        }
-        "4" { 
-            Write-Success "README.md neej baina..."
-            Start-Process "$docDir\README.md" 
-        }
-        default { Write-Info "Barimtat algasav" }
+        "1" { Start-Process "$docDir\QUICK_START.md" }
+        "2" { Start-Process "$docDir\TEST_SUMMARY.md" }
+        "3" { Start-Process "$docDir\BACKEND_FIX_CHECKLIST.md" }
+        "4" { Start-Process "$docDir\README.md" }
+        default { Write-Info "Skipped documentation" }
     }
     
     # Cleanup
@@ -131,7 +102,7 @@ TEST-IIN DUN:
     $notification.Dispose()
 }
 
-# Navigate to test directory
+# Test directory руу шилжих
 $testDir = Split-Path -Parent $PSScriptRoot
 Set-Location $testDir
 
@@ -140,7 +111,7 @@ Write-Info "Test Directory: $testDir"
 Write-Info "Test Type: $TestType"
 Write-Info "Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
-# Service check function
+# Service шалгах функц
 function Test-Services {
     Write-Info "Checking required services..."
     
@@ -181,7 +152,7 @@ function Test-Services {
     return $true
 }
 
-# Dependencies check
+# Dependencies шалгах
 function Test-Dependencies {
     Write-Info "Checking dependencies..."
     
@@ -200,7 +171,7 @@ function Test-Dependencies {
     return $true
 }
 
-# Run unit tests
+# Unit tests ажиллуулах
 function Invoke-UnitTests {
     Write-Header "Running Unit Tests"
     
@@ -215,7 +186,7 @@ function Invoke-UnitTests {
     }
 }
 
-# Run integration tests
+# Integration tests ажиллуулах
 function Invoke-IntegrationTests {
     Write-Header "Running Integration Tests"
     
@@ -230,7 +201,7 @@ function Invoke-IntegrationTests {
     }
 }
 
-# Run security tests
+# Security tests ажиллуулах
 function Invoke-SecurityTests {
     Write-Header "Running Security Tests"
     
@@ -245,7 +216,7 @@ function Invoke-SecurityTests {
     }
 }
 
-# Run all tests in sequence
+# Тестүүдийг дарааллаар ажиллуулах
 function Invoke-AllTests {
     $results = @{
         "Unit" = $false
@@ -293,24 +264,24 @@ function Invoke-AllTests {
 
 # Main execution
 try {
-    # Check dependencies
+    # Dependencies шалгах
     if (-not (Test-Dependencies)) {
         exit 1
     }
     
-    # Remove API_URL environment variable (tests configure themselves)
+    # API_URL environment variable устгах (tests өөрөө тохируулна)
     if ($env:API_URL) {
         Write-Info "Removing API_URL environment variable"
         Remove-Item Env:\API_URL -ErrorAction SilentlyContinue
     }
     
-    # Run tests
+    # Тестүүдийг ажиллуулах
     $startTime = Get-Date
     $results = Invoke-AllTests
     $endTime = Get-Date
     $duration = $endTime - $startTime
     
-    # Show summary
+    # Дүнг харуулах
     Write-Header "Test Summary"
     Write-Info "Total Duration: $($duration.TotalSeconds) seconds"
     Write-Host ""
@@ -337,10 +308,10 @@ try {
     Show-TestDocumentation -PassedTests $passedTests -TotalTests $totalTests -Duration $duration
     
     if ($passedTests -eq $totalTests -and $totalTests -gt 0) {
-        Write-Header "All Tests PASSED!"
+        Write-Header "All Tests PASSED! ✓"
         exit 0
     } else {
-        Write-Header "Some Tests FAILED"
+        Write-Header "Some Tests FAILED ✗"
         exit 1
     }
 }
@@ -348,7 +319,7 @@ catch {
     Write-Fail "Unexpected error occurred"
     Write-Fail $_.Exception.Message
     
-    if ($ShowDetails) {
+    if ($Verbose) {
         Write-Host "`nStack Trace:" -ForegroundColor Red
         Write-Host $_.ScriptStackTrace -ForegroundColor Red
     }
