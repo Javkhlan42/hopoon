@@ -54,8 +54,8 @@ export default function RidesPage() {
   const filteredRides = rides.filter((ride) => {
     const matchesSearch =
       ride.driverName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ride.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ride.to.toLowerCase().includes(searchTerm.toLowerCase());
+      ride.from?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ride.to?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === 'all' || ride.status === statusFilter;

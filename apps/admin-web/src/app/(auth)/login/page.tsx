@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import {
@@ -10,20 +11,55 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/Card';
+import { api } from '../../../lib/apiClient';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Implement actual login logic
-    setTimeout(() => {
+    setError('');
+
+    try {
+      // Хуучин token-уудыг устгах (JWT_SECRET солигдсон тул)
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('adminAccessToken');
+      localStorage.removeItem('adminRefreshToken');
+
+      // Admin email нэвтрэх
+      const response = await api.auth.adminLogin(email, password);
+
+      // Token-ийг localStorage-д хадгалах
+      if (response.accessToken) {
+        localStorage.setItem('adminToken', response.accessToken);
+        // Backend 'admin' field буцаана, 'user' биш
+        localStorage.setItem('adminUser', JSON.stringify(response.admin));
+
+        console.log('✅ Login successful:', {
+          user: response.admin,
+          tokenPreview: response.accessToken.substring(0, 20) + '...',
+        });
+
+        // Dashboard руу шилжих
+        router.push('/dashboard');
+      } else {
+        throw new Error('No access token received');
+      }
+    } catch (err: any) {
+      console.error('❌ Login failed:', err);
+      setError(
+        err.message ||
+          'Нэвтрэх амжилтгүй боллоо. Имэйл болон нууц үгээ шалгана уу.',
+      );
+    } finally {
       setIsLoading(false);
-      window.location.href = '/';
-    }, 1000);
+    }
   };
 
   return (
@@ -94,6 +130,13 @@ export default function LoginPage() {
                 Намайг сана
               </label>
             </div>
+
+            {error && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full h-12 text-base font-medium"
@@ -101,6 +144,13 @@ export default function LoginPage() {
             >
               {isLoading ? 'Нэвтэрч байна...' : 'Нэвтрэх'}
             </Button>
+
+            <div className="mt-4 text-center text-sm text-gray-600">
+              <p>Тест эрх:</p>
+              <p className="font-mono text-xs mt-1">
+                admin@hopon.mn / admin123
+              </p>
+            </div>
           </form>
         </CardContent>
       </Card>

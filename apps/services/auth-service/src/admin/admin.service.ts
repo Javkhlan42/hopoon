@@ -162,6 +162,30 @@ export class AdminService {
     return { success: true, message: 'Verification status updated' };
   }
 
+  async updateUserRole(userId: string, role: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    await this.userRepository.update(userId, {
+      role: role as any,
+    });
+
+    return {
+      success: true,
+      message: `User role updated to ${role}`,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: role,
+      },
+    };
+  }
+
   // SOS - Mock implementations
   async getSOSAlerts(query: any) {
     return { alerts: [], meta: { page: 1, limit: 50, total: 0 } };

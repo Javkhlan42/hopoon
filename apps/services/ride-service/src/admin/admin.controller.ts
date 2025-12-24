@@ -58,8 +58,23 @@ export class AdminController {
       limit,
     });
 
+    // Transform rides to match frontend expectations
+    const transformedRides = rides.data.map((ride) => ({
+      id: ride.id,
+      driverId: ride.driver_id,
+      driverName: `Driver ${ride.driver_id.substring(0, 8)}`, // Placeholder - would need driver service
+      from: ride.origin_address,
+      to: ride.destination_address,
+      departureTime: ride.departure_time,
+      availableSeats: ride.available_seats,
+      totalSeats: ride.available_seats, // Would need to track original total separately
+      price: parseFloat(ride.price_per_seat.toString()),
+      status: ride.status,
+      passengers: 0, // Would come from booking service
+    }));
+
     return {
-      rides: rides.data,
+      rides: transformedRides,
       meta: {
         total: rides.total,
         page: parseInt(page),
@@ -101,6 +116,22 @@ export class AdminController {
     // Soft delete by cancelling the ride
     await this.ridesService.cancel(id, 'admin');
     return { success: true, message: 'Ride deleted (cancelled)' };
+  }
+
+  @Get('dashboard/stats')
+  @ApiOperation({ summary: 'Get ride statistics for dashboard' })
+  async getDashboardStats() {
+    const totalRides = await this.ridesService.count();
+    const activeRides = await this.ridesService.count({ status: 'active' });
+    const completedRides = await this.ridesService.count({
+      status: 'completed',
+    });
+
+    return {
+      totalRides,
+      activeRides,
+      completedRides,
+    };
   }
 
   @Get('reports/ride-stats')

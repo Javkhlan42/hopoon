@@ -28,7 +28,26 @@ export function UserDetailModal({
 }: UserDetailModalProps) {
   if (!user) return null;
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(user.role || 'passenger');
 
+  const handleUpdateRole = async () => {
+    if (selectedRole === user.role) {
+      alert('Эрх өөрчлөгдөөгүй байна');
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.users.updateUserRole(user.id, selectedRole as any);
+      alert(`Хэрэглэгчийн эрх "${selectedRole}" болж өөрчлөгдлөө`);
+      onUpdate?.();
+      onClose();
+    } catch (error) {
+      console.error('Failed to update role:', error);
+      alert('Алдаа гарлаа');
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleToggleVerification = async () => {
     setLoading(true);
     try {
@@ -162,8 +181,64 @@ export function UserDetailModal({
                           ? 'Түр хаасан'
                           : 'Хүлээгдэж буй'}
                     </Badge>
+                    <Badge variant="outline">
+                      {user.role === 'driver'
+                        ? 'Жолооч'
+                        : user.role === 'passenger'
+                          ? 'Зорчигч'
+                          : user.role === 'both'
+                            ? 'Жолооч/Зорчигч'
+                            : 'Админ'}
+                    </Badge>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Role Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Эрх удирдлага</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Хэрэглэгчийн эрх
+                  </label>
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    disabled={loading}
+                  >
+                    <option value="passenger">Зорчигч</option>
+                    <option value="driver">Жолооч</option>
+                    <option value="both">Жолооч/Зорчигч хоёулаа</option>
+                    <option value="admin">Админ</option>
+                  </select>
+                </div>
+                {selectedRole !== user.role && (
+                  <Button
+                    variant="default"
+                    onClick={handleUpdateRole}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    Эрх өөрчлөх
+                  </Button>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  {selectedRole === 'driver' &&
+                    '🚗 Жолооч эрх өгснөөр тус хэрэглэгч аялал үүсгэх боломжтой болно.'}
+                  {selectedRole === 'passenger' &&
+                    '👤 Зорчигч эрхтэй хэрэглэгч зөвхөн аялалд суух боломжтой.'}
+                  {selectedRole === 'both' &&
+                    '🚗👤 Жолооч болон зорчигч хоёр эрхтэй. Аялал үүсгэх болон суух боломжтой.'}
+                  {selectedRole === 'admin' &&
+                    '⚙️ Админ эрх өгснөөр админ панел руу нэвтрэх боломжтой болно.'}
+                </p>
               </div>
             </CardContent>
           </Card>

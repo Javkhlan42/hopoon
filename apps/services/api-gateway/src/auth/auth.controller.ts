@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -55,6 +55,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
   @ApiBody({
     schema: {
@@ -87,6 +88,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   async logout(@Req() req: any) {
     const token = req.headers.authorization;
     return this.proxyService.post(
@@ -111,6 +113,7 @@ export class AuthController {
 
   @Public()
   @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Admin login' })
   @ApiBody({
     schema: {

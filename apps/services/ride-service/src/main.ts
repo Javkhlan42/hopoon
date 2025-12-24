@@ -17,9 +17,28 @@ async function bootstrap() {
 
   // Swagger setup
   const config = new DocumentBuilder()
-    .setTitle('Ride Service API')
-    .setDescription('Ride Management and Admin Service')
-    .setVersion('1.0')
+    .setTitle('Hop-On Ride Service')
+    .setDescription(
+      'Ride Management and Search Service\n\n' +
+        '## Features\n' +
+        '- Create ride offers (drivers only)\n' +
+        '- Search rides by route and location (PostGIS)\n' +
+        '- List available rides with filters\n' +
+        '- Update ride details\n' +
+        '- Start/Complete rides\n' +
+        '- Ride feed for social discovery\n' +
+        '- Comments on rides\n\n' +
+        '## Ride Status\n' +
+        '- `draft` - Not yet published\n' +
+        '- `active` - Available for booking\n' +
+        '- `full` - All seats booked\n' +
+        '- `in_progress` - Ride started\n' +
+        '- `completed` - Ride finished\n' +
+        '- `cancelled` - Ride cancelled\n\n' +
+        '## Location-Based Search\n' +
+        'Uses PostgreSQL PostGIS for accurate distance calculations and route matching.',
+    )
+    .setVersion('1.0.0')
     .addBearerAuth(
       {
         type: 'http',
@@ -31,8 +50,9 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
-    .addTag('Rides', 'Ride endpoints')
+    .addTag('Rides', 'Ride CRUD operations and management')
     .addTag('Admin - Rides', 'Admin ride management endpoints')
+    .addServer('http://localhost:3003', 'Ride Service')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {

@@ -48,12 +48,32 @@ export class AdminController {
   @ApiOperation({ summary: 'Get dashboard statistics' })
   async getDashboardStats(@Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.get(
-      this.authServiceUrl,
-      '/admin/dashboard/stats',
-      {},
-      { Authorization: token },
-    );
+
+    // Fetch stats from both auth-service and ride-service
+    const [authStats, rideStats] = await Promise.all([
+      this.proxyService.get(
+        this.authServiceUrl,
+        '/admin/dashboard/stats',
+        {},
+        { Authorization: token },
+      ),
+      this.proxyService.get(
+        this.rideServiceUrl,
+        '/admin/dashboard/stats',
+        {},
+        { Authorization: token },
+      ),
+    ]);
+
+    // Merge the results
+    return {
+      totalUsers: authStats.totalUsers,
+      activeDrivers: authStats.activeDrivers,
+      totalRides: rideStats.totalRides,
+      activeRides: rideStats.activeRides,
+      completedRides: rideStats.completedRides,
+      totalRevenue: authStats.totalRevenue || 0,
+    };
   }
 
   @Get('dashboard/daily-stats')
@@ -88,12 +108,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Get users list' })
   async getUsers(@Query() query: any, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.get(
-      this.userServiceUrl,
-      '/admin/users',
-      query,
-      { Authorization: token },
-    );
+    return this.proxyService.get(this.userServiceUrl, '/admin/users', query, {
+      Authorization: token,
+    });
   }
 
   @Get('users/:id')
@@ -140,11 +157,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete user' })
   async deleteUser(@Param('id') id: string, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.delete(
-      this.userServiceUrl,
-      `/admin/users/${id}`,
-      { Authorization: token },
-    );
+    return this.proxyService.delete(this.userServiceUrl, `/admin/users/${id}`, {
+      Authorization: token,
+    });
   }
 
   @Post('users/:id/verify')
@@ -159,6 +174,22 @@ export class AdminController {
     );
   }
 
+  @Put('users/:id/role')
+  @ApiOperation({ summary: 'Update user role' })
+  async updateUserRole(
+    @Param('id') id: string,
+    @Body() body: { role: string },
+    @Req() req: any,
+  ) {
+    const token = req.headers.authorization;
+    return this.proxyService.put(
+      this.userServiceUrl,
+      `/admin/users/${id}/role`,
+      body,
+      { Authorization: token },
+    );
+  }
+
   // ============================================
   // RIDES
   // ============================================
@@ -167,12 +198,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Get rides list' })
   async getRides(@Query() query: any, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.get(
-      this.rideServiceUrl,
-      '/admin/rides',
-      query,
-      { Authorization: token },
-    );
+    return this.proxyService.get(this.rideServiceUrl, '/admin/rides', query, {
+      Authorization: token,
+    });
   }
 
   @Get('rides/:id')
@@ -207,11 +235,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete ride' })
   async deleteRide(@Param('id') id: string, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.delete(
-      this.rideServiceUrl,
-      `/admin/rides/${id}`,
-      { Authorization: token },
-    );
+    return this.proxyService.delete(this.rideServiceUrl, `/admin/rides/${id}`, {
+      Authorization: token,
+    });
   }
 
   // ============================================
@@ -222,12 +248,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Get SOS alerts' })
   async getSOSAlerts(@Query() query: any, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.get(
-      this.authServiceUrl,
-      '/admin/sos',
-      query,
-      { Authorization: token },
-    );
+    return this.proxyService.get(this.authServiceUrl, '/admin/sos', query, {
+      Authorization: token,
+    });
   }
 
   @Post('sos/:id/resolve')

@@ -909,6 +909,512 @@ X-RateLimit-Reset: 1640350800
 
 ---
 
+## 7. Admin API
+
+Admin панелд зориулсан backend API endpoints. Бүх admin endpoints JWT authentication болон admin role шаардлагатай.
+
+### 7.1 Admin Authentication
+
+#### Admin Login
+
+| Method | Endpoint            | Auth | Description |
+| ------ | ------------------- | ---- | ----------- |
+| POST   | `/auth/admin/login` | None | Admin login |
+
+**Request Body:**
+
+```json
+{
+  "email": "admin@hopon.mn",
+  "password": "admin123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "admin": {
+    "id": "admin-1",
+    "email": "admin@hopon.mn",
+    "name": "Admin",
+    "role": "superadmin"
+  }
+}
+```
+
+---
+
+### 7.2 Dashboard
+
+#### Get Dashboard Stats
+
+| Method | Endpoint                 | Auth                 | Description         |
+| ------ | ------------------------ | -------------------- | ------------------- |
+| GET    | `/admin/dashboard/stats` | Bearer Token (Admin) | Get dashboard stats |
+
+**Response:**
+
+```json
+{
+  "totalUsers": 245,
+  "activeDrivers": 89,
+  "totalRides": 1234,
+  "totalRevenue": 12500000
+}
+```
+
+#### Get Daily Stats
+
+| Method | Endpoint                       | Auth                 | Description          |
+| ------ | ------------------------------ | -------------------- | -------------------- |
+| GET    | `/admin/dashboard/daily-stats` | Bearer Token (Admin) | Get daily statistics |
+
+**Query Parameters:**
+
+- `startDate` - Start date (YYYY-MM-DD)
+- `endDate` - End date (YYYY-MM-DD)
+
+**Response:**
+
+```json
+[
+  {
+    "date": "2025-12-23",
+    "users": 45,
+    "rides": 123,
+    "revenue": 450000
+  }
+]
+```
+
+#### Get Active SOS Alerts
+
+| Method | Endpoint                      | Auth                 | Description           |
+| ------ | ----------------------------- | -------------------- | --------------------- |
+| GET    | `/admin/dashboard/active-sos` | Bearer Token (Admin) | Get active SOS alerts |
+
+---
+
+### 7.3 Users Management
+
+#### Get Users List
+
+| Method | Endpoint       | Auth                 | Description                    |
+| ------ | -------------- | -------------------- | ------------------------------ |
+| GET    | `/admin/users` | Bearer Token (Admin) | Get users list with pagination |
+
+**Query Parameters:**
+
+- `search` - Хайлтын текст (нэр, утас, имэйл)
+- `status` - Статус (all, active, blocked)
+- `role` - Үүрэг (all, passenger, driver, both)
+- `page` - Хуудас (default: 1)
+- `limit` - Хязгаар (default: 20)
+
+**Response:**
+
+```json
+{
+  "users": [
+    {
+      "id": "uuid",
+      "name": "Болдбаатар",
+      "phone": "+97699123456",
+      "email": "bold@example.com",
+      "role": "driver",
+      "status": "active",
+      "createdAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 245,
+    "totalPages": 13
+  }
+}
+```
+
+#### Get User Details
+
+| Method | Endpoint           | Auth                 | Description      |
+| ------ | ------------------ | -------------------- | ---------------- |
+| GET    | `/admin/users/:id` | Bearer Token (Admin) | Get user details |
+
+#### Block User
+
+| Method | Endpoint                 | Auth                 | Description |
+| ------ | ------------------------ | -------------------- | ----------- |
+| POST   | `/admin/users/:id/block` | Bearer Token (Admin) | Block user  |
+
+**Request Body:**
+
+```json
+{
+  "reason": "Зөрчил гаргасан"
+}
+```
+
+#### Unblock User
+
+| Method | Endpoint                   | Auth                 | Description  |
+| ------ | -------------------------- | -------------------- | ------------ |
+| POST   | `/admin/users/:id/unblock` | Bearer Token (Admin) | Unblock user |
+
+#### Delete User
+
+| Method | Endpoint           | Auth                 | Description |
+| ------ | ------------------ | -------------------- | ----------- |
+| DELETE | `/admin/users/:id` | Bearer Token (Admin) | Delete user |
+
+#### Verify User
+
+| Method | Endpoint                  | Auth                 | Description |
+| ------ | ------------------------- | -------------------- | ----------- |
+| POST   | `/admin/users/:id/verify` | Bearer Token (Admin) | Verify user |
+
+---
+
+### 7.4 Rides Management
+
+#### Get Rides List
+
+| Method | Endpoint       | Auth                 | Description    |
+| ------ | -------------- | -------------------- | -------------- |
+| GET    | `/admin/rides` | Bearer Token (Admin) | Get rides list |
+
+**Query Parameters:**
+
+- `search` - Хайлтын текст
+- `status` - Ride status
+- `page` - Page number
+- `limit` - Items per page
+
+**Response:**
+
+```json
+{
+  "rides": [
+    {
+      "id": "ride-uuid",
+      "driverId": "driver-uuid",
+      "driverName": "Болдбаатар",
+      "from": "Сүхбаатарын талбай",
+      "to": "Зайсан",
+      "departureTime": "2025-12-25T14:00:00Z",
+      "availableSeats": 2,
+      "totalSeats": 4,
+      "price": 5000,
+      "status": "active"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 156,
+    "totalPages": 8
+  }
+}
+```
+
+#### Get Ride Details
+
+| Method | Endpoint           | Auth                 | Description      |
+| ------ | ------------------ | -------------------- | ---------------- |
+| GET    | `/admin/rides/:id` | Bearer Token (Admin) | Get ride details |
+
+#### Cancel Ride
+
+| Method | Endpoint                  | Auth                 | Description |
+| ------ | ------------------------- | -------------------- | ----------- |
+| POST   | `/admin/rides/:id/cancel` | Bearer Token (Admin) | Cancel ride |
+
+**Request Body:**
+
+```json
+{
+  "reason": "Техникийн шалтгаан"
+}
+```
+
+#### Delete Ride
+
+| Method | Endpoint           | Auth                 | Description |
+| ------ | ------------------ | -------------------- | ----------- |
+| DELETE | `/admin/rides/:id` | Bearer Token (Admin) | Delete ride |
+
+---
+
+### 7.5 SOS Management
+
+#### Get SOS Alerts
+
+| Method | Endpoint     | Auth                 | Description    |
+| ------ | ------------ | -------------------- | -------------- |
+| GET    | `/admin/sos` | Bearer Token (Admin) | Get SOS alerts |
+
+**Query Parameters:**
+
+- `status` - active, resolved
+
+#### Resolve SOS Alert
+
+| Method | Endpoint                 | Auth                 | Description       |
+| ------ | ------------------------ | -------------------- | ----------------- |
+| POST   | `/admin/sos/:id/resolve` | Bearer Token (Admin) | Resolve SOS alert |
+
+**Request Body:**
+
+```json
+{
+  "notes": "Цагдаад мэдэгдсэн, асуудал шийдэгдсэн"
+}
+```
+
+#### Call User
+
+| Method | Endpoint              | Auth                 | Description   |
+| ------ | --------------------- | -------------------- | ------------- |
+| POST   | `/admin/sos/:id/call` | Bearer Token (Admin) | Initiate call |
+
+#### Get Navigation Link
+
+| Method | Endpoint                    | Auth                 | Description         |
+| ------ | --------------------------- | -------------------- | ------------------- |
+| GET    | `/admin/sos/:id/navigation` | Bearer Token (Admin) | Get navigation link |
+
+---
+
+### 7.6 Moderation
+
+#### Get Reports
+
+| Method | Endpoint                    | Auth                 | Description      |
+| ------ | --------------------------- | -------------------- | ---------------- |
+| GET    | `/admin/moderation/reports` | Bearer Token (Admin) | Get reports list |
+
+**Query Parameters:**
+
+- `type` - Төрөл (all, user, ride)
+- `status` - Статус (all, pending, approved, rejected)
+
+#### Get Report Details
+
+| Method | Endpoint                        | Auth                 | Description        |
+| ------ | ------------------------------- | -------------------- | ------------------ |
+| GET    | `/admin/moderation/reports/:id` | Bearer Token (Admin) | Get report details |
+
+#### Approve Report
+
+| Method | Endpoint                                | Auth                 | Description    |
+| ------ | --------------------------------------- | -------------------- | -------------- |
+| POST   | `/admin/moderation/reports/:id/approve` | Bearer Token (Admin) | Approve report |
+
+**Request Body:**
+
+```json
+{
+  "action": "block_user",
+  "notes": "Зөрчил батлагдсан"
+}
+```
+
+#### Reject Report
+
+| Method | Endpoint                               | Auth                 | Description   |
+| ------ | -------------------------------------- | -------------------- | ------------- |
+| POST   | `/admin/moderation/reports/:id/reject` | Bearer Token (Admin) | Reject report |
+
+**Request Body:**
+
+```json
+{
+  "reason": "Нотлох баримт хангалтгүй"
+}
+```
+
+---
+
+### 7.7 Reports & Analytics
+
+#### User Growth
+
+| Method | Endpoint                     | Auth                 | Description           |
+| ------ | ---------------------------- | -------------------- | --------------------- |
+| GET    | `/admin/reports/user-growth` | Bearer Token (Admin) | Get user growth stats |
+
+**Query Parameters:**
+
+- `period` - week, month, year
+
+**Response:**
+
+```json
+[
+  {
+    "date": "2025-12-23",
+    "drivers": 45,
+    "passengers": 78,
+    "total": 123
+  }
+]
+```
+
+#### Ride Statistics
+
+| Method | Endpoint                    | Auth                 | Description         |
+| ------ | --------------------------- | -------------------- | ------------------- |
+| GET    | `/admin/reports/ride-stats` | Bearer Token (Admin) | Get ride statistics |
+
+**Response:**
+
+```json
+{
+  "completed": 1250,
+  "cancelled": 85,
+  "ongoing": 23,
+  "completionRate": 93.6
+}
+```
+
+#### Revenue Report
+
+| Method | Endpoint                 | Auth                 | Description        |
+| ------ | ------------------------ | -------------------- | ------------------ |
+| GET    | `/admin/reports/revenue` | Bearer Token (Admin) | Get revenue report |
+
+**Query Parameters:**
+
+- `period` - week, month, year
+
+#### Popular Routes
+
+| Method | Endpoint                        | Auth                 | Description        |
+| ------ | ------------------------------- | -------------------- | ------------------ |
+| GET    | `/admin/reports/popular-routes` | Bearer Token (Admin) | Get popular routes |
+
+**Query Parameters:**
+
+- `limit` - Number of routes (default: 10)
+
+**Response:**
+
+```json
+[
+  {
+    "from": "Сүхбаатарын талбай",
+    "to": "ШУТИС",
+    "count": 245,
+    "avgPrice": 3000
+  }
+]
+```
+
+#### Top Drivers
+
+| Method | Endpoint                     | Auth                 | Description     |
+| ------ | ---------------------------- | -------------------- | --------------- |
+| GET    | `/admin/reports/top-drivers` | Bearer Token (Admin) | Get top drivers |
+
+**Query Parameters:**
+
+- `limit` - Number of drivers (default: 10)
+
+**Response:**
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Болдбаатар",
+    "rating": 4.9,
+    "totalRides": 345,
+    "revenue": 2450000
+  }
+]
+```
+
+---
+
+### 7.8 System Management
+
+#### System Status
+
+| Method | Endpoint               | Auth                 | Description       |
+| ------ | ---------------------- | -------------------- | ----------------- |
+| GET    | `/admin/system/status` | Bearer Token (Admin) | Get system status |
+
+**Response:**
+
+```json
+{
+  "cpu": 35,
+  "memory": {
+    "used": 6.4,
+    "total": 16,
+    "percentage": 40
+  },
+  "disk": {
+    "used": 45.2,
+    "total": 100,
+    "percentage": 45
+  },
+  "uptime": 345600
+}
+```
+
+#### Services Health
+
+| Method | Endpoint                 | Auth                 | Description         |
+| ------ | ------------------------ | -------------------- | ------------------- |
+| GET    | `/admin/system/services` | Bearer Token (Admin) | Get services health |
+
+**Response:**
+
+```json
+[
+  {
+    "name": "Auth Service",
+    "status": "healthy",
+    "responseTime": 15,
+    "lastChecked": "2025-12-24T10:30:00Z"
+  }
+]
+```
+
+#### System Logs
+
+| Method | Endpoint             | Auth                 | Description     |
+| ------ | -------------------- | -------------------- | --------------- |
+| GET    | `/admin/system/logs` | Bearer Token (Admin) | Get system logs |
+
+**Query Parameters:**
+
+- `level` - error, warning, info
+- `service` - Service name
+- `page` - Page number
+- `limit` - Items per page
+
+#### Update Configuration
+
+| Method | Endpoint               | Auth                 | Description                 |
+| ------ | ---------------------- | -------------------- | --------------------------- |
+| PUT    | `/admin/system/config` | Bearer Token (Admin) | Update system configuration |
+
+**Request Body:**
+
+```json
+{
+  "maintenanceMode": false,
+  "allowRegistrations": true
+}
+```
+
+---
+
 ## Testing
 
 ### Using cURL
@@ -918,6 +1424,11 @@ X-RateLimit-Reset: 1640350800
 curl -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"phone":"+97699887766","password":"Password123"}'
+
+# Admin login
+curl -X POST http://localhost:3000/api/v1/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@hopon.mn","password":"admin123"}'
 
 # Create ride (with token)
 curl -X POST http://localhost:3000/api/v1/rides \
@@ -930,6 +1441,10 @@ curl -X POST http://localhost:3000/api/v1/rides \
     "availableSeats": 3,
     "pricePerSeat": 5000
   }'
+
+# Get users (admin)
+curl -X GET http://localhost:3000/api/v1/admin/users \
+  -H "Authorization: Bearer ADMIN_TOKEN"
 ```
 
 ### Using Postman
@@ -946,6 +1461,7 @@ Import the collection from: `test/postman/hop-on-api.postman_collection.json`
 .\test-driver-new.ps1
 .\test-passenger-booking.ps1
 .\test-payment-service.ps1
+.\test-admin-api.ps1
 ```
 
 ---

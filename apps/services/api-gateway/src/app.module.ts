@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AuthController } from './auth/auth.controller';
+import { UsersController } from './users/users.controller';
 import { RidesController } from './rides/rides.controller';
 import { BookingsController } from './bookings/bookings.controller';
 import { PaymentsController } from './payments/payments.controller';
@@ -34,6 +35,7 @@ import { AdminGuard } from './admin/admin.guard';
   controllers: [
     AppController,
     AuthController,
+    UsersController,
     RidesController,
     BookingsController,
     PaymentsController,

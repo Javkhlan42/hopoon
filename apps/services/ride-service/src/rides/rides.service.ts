@@ -59,12 +59,8 @@ export class RidesService {
 
     if (status) {
       queryBuilder.where('ride.status = :status', { status });
-    } else {
-      // By default, only show active rides
-      queryBuilder.where('ride.status = :status', {
-        status: RideStatus.ACTIVE,
-      });
     }
+    // For admin, show all rides regardless of status if no status filter is provided
 
     if (driverId) {
       queryBuilder.andWhere('ride.driver_id = :driverId', { driverId });
@@ -88,6 +84,15 @@ export class RidesService {
     }
 
     return ride;
+  }
+
+  async count(filter?: { status?: string }): Promise<number> {
+    if (filter?.status) {
+      return this.ridesRepository.count({
+        where: { status: filter.status as RideStatus },
+      });
+    }
+    return this.ridesRepository.count();
   }
 
   async update(
@@ -307,5 +312,86 @@ export class RidesService {
 
     ride.status = RideStatus.COMPLETED;
     return this.ridesRepository.save(ride);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getFeed(query: any): Promise<any> {
+    const { lat, lng, radius = 50000, page = 1, limit = 20 } = query;
+
+    const queryBuilder = this.ridesRepository.createQueryBuilder('ride');
+
+    // Only show active rides
+    queryBuilder.where('ride.status = :status', { status: RideStatus.ACTIVE });
+
+    // Only future rides
+    queryBuilder.andWhere('ride.departure_time > :now', { now: new Date() });
+
+    // If location provided, filter by radius
+    if (lat && lng) {
+      queryBuilder.andWhere(
+        `ST_DWithin(
+          ST_MakePoint(ride.origin_lng, ride.origin_lat)::geography,
+          ST_MakePoint(:lng, :lat)::geography,
+          :radius
+        )`,
+        {
+          lng: parseFloat(lng),
+          lat: parseFloat(lat),
+          radius: parseInt(radius),
+        },
+      );
+    }
+
+    queryBuilder
+      .orderBy('ride.created_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data: data.map((ride) => ({
+        id: ride.id,
+        driver: {
+          id: ride.driver_id,
+          // Should fetch driver details from Auth service
+        },
+        route: {
+          origin: ride.origin_address,
+          destination: ride.destination_address,
+          distance: null, // Calculate from geometry
+        },
+        departureTime: ride.departure_time,
+        seatsAvailable: ride.available_seats,
+        costPerSeat: ride.price_per_seat,
+        commentCount: 0, // Should query from comments table
+        bookingCount: 0, // Should query from bookings
+        createdAt: ride.created_at,
+      })),
+      meta: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+      },
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async addComment(rideId: string, userId: string, text: string): Promise<any> {
+    const ride = await this.findOne(rideId);
+
+    // In production, save to comments table
+    const comment = {
+      id: `comment_${Date.now()}`,
+      rideId,
+      user: {
+        id: userId,
+        // Should fetch user details from Auth service
+      },
+      text,
+      createdAt: new Date().toISOString(),
+    };
+
+    return comment;
   }
 }

@@ -131,4 +131,37 @@ export class RidesController {
   ) {
     return this.ridesService.updateAvailableSeats(id, body.seatsChange);
   }
+
+  @Public()
+  @Get('feed')
+  @ApiOperation({ summary: 'Get ride feed' })
+  @ApiQuery({ name: 'lat', required: false, type: Number })
+  @ApiQuery({ name: 'lng', required: false, type: Number })
+  @ApiQuery({ name: 'radius', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getFeed(@Query() query: Record<string, unknown>) {
+    return this.ridesService.getFeed(query);
+  }
+
+  @Post(':id/comments')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Add comment to ride' })
+  @ApiParam({ name: 'id', description: 'Ride ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.CREATED)
+  async addComment(
+    @Param('id') id: string,
+    @Body() body: { text: string },
+    @Request() req,
+  ) {
+    return this.ridesService.addComment(id, req.user.userId, body.text);
+  }
 }

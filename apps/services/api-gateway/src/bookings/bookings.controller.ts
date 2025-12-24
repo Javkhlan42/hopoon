@@ -10,11 +10,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Bookings')
+@ApiBearerAuth('JWT-auth')
 @Controller('bookings')
 @UseGuards(JwtAuthGuard)
 export class BookingsController {
@@ -26,7 +27,31 @@ export class BookingsController {
   }
 
   @Post()
-  async create(@Body() body: any, @Req() req: any) {
+  @ApiOperation({ summary: 'Create a new booking' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['rideId', 'seats'],
+      properties: {
+        rideId: {
+          type: 'string',
+          description: 'ID of the ride to book',
+          example: '123e4567-e89b-12d3-a456-426614174000',
+        },
+        seats: {
+          type: 'number',
+          description: 'Number of seats to book',
+          minimum: 1,
+          maximum: 10,
+          example: 2,
+        },
+      },
+    },
+  })
+  async create(
+    @Body() body: { rideId: string; seats: number },
+    @Req() req: any,
+  ) {
     const token = req.headers.authorization;
     return this.proxyService.post(this.bookingServiceUrl, '/bookings', body, {
       Authorization: token,
@@ -34,6 +59,7 @@ export class BookingsController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all bookings for current user' })
   async findAll(@Query() query: any, @Req() req: any) {
     const token = req.headers.authorization;
     return this.proxyService.get(this.bookingServiceUrl, '/bookings', query, {

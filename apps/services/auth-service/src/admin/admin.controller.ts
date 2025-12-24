@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Body,
   Param,
@@ -102,6 +103,17 @@ export class AdminController {
   @Post('users/:id/verify')
   async verifyUser(@Param('id') id: string) {
     return this.adminService.toggleVerification(id);
+  }
+
+  @Put('users/:id/role')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user role' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  async updateUserRole(
+    @Param('id') id: string,
+    @Body() body: { role: 'passenger' | 'driver' | 'both' | 'admin' },
+  ) {
+    return this.adminService.updateUserRole(id, body.role);
   }
 
   // SOS

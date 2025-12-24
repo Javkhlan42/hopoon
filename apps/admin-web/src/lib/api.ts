@@ -177,6 +177,16 @@ export const usersAPI = {
   toggleVerification: (userId: string) =>
     fetchAPI(`${ADMIN_BASE}/users/${userId}/verify`, { method: 'POST' }),
 
+  // Хэрэглэгчийн эрхийг өөрчлөх
+  updateUserRole: (
+    userId: string,
+    role: 'passenger' | 'driver' | 'both' | 'admin',
+  ) =>
+    fetchAPI(`${ADMIN_BASE}/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    }),
+
   // Шинэ хэрэглэгч нэмэх
   createUser: (userData: {
     name: string;

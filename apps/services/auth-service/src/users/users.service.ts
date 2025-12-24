@@ -86,4 +86,96 @@ export class UsersService {
       ],
     });
   }
+
+  async updateProfile(
+    userId: string,
+    updateDto: { name?: string; email?: string; bio?: string },
+  ): Promise<User> {
+    await this.usersRepository.update(userId, updateDto);
+    return this.findById(userId);
+  }
+
+  async uploadProfilePhoto(
+    userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    file: any,
+  ): Promise<any> {
+    // In production, upload to cloud storage (S3, Cloudinary, etc.)
+    const photoUrl = `https://cdn.hopon.mn/users/${userId}.jpg`;
+
+    await this.usersRepository.update(userId, {
+      // Add profile_photo column if needed
+    });
+
+    return {
+      photoUrl,
+      uploadedAt: new Date().toISOString(),
+    };
+  }
+
+  async submitIdentityVerification(
+    userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    idPhoto: any,
+  ): Promise<any> {
+    // In production, upload files and create verification request
+    const verificationId = `ver_${Date.now()}`;
+
+    await this.usersRepository.update(userId, {
+      verification_status: 'pending' as any,
+    });
+
+    return {
+      verificationId,
+      status: 'pending',
+      message: 'Verification submitted. Results in 24-48 hours.',
+      submittedAt: new Date().toISOString(),
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getRideHistory(userId: string, query: any): Promise<any> {
+    // This should call Ride Service via HTTP
+    // For now, return mock data
+    return {
+      data: [],
+      meta: {
+        page: query.page || 1,
+        limit: query.limit || 20,
+        total: 0,
+      },
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getPublicProfile(userId: string): Promise<any> {
+    const user = await this.findById(userId);
+
+    // Return public fields only
+    return {
+      id: user.id,
+      name: user.name,
+      verified: user.verification_status === 'verified',
+      rating: user.rating,
+      reviewCount: 0, // Should query from review service
+      badges: user.verification_status === 'verified' ? ['verified'] : [],
+      memberSince: user.created_at,
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getUserReviews(userId: string, query: any): Promise<any> {
+    // This should call Review/Rating Service
+    // For now, return mock data
+    return {
+      data: [],
+      meta: {
+        page: query.page || 1,
+        limit: query.limit || 20,
+        total: 0,
+        totalPages: 0,
+        averageRating: 0,
+      },
+    };
+  }
 }

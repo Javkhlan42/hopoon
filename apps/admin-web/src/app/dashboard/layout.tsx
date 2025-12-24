@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { Header } from '../../components/layout/Header';
 
@@ -6,6 +10,18 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check authentication
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      // Redirect to login if no token
+      router.push('/login');
+    }
+  }, [router]);
+
   return (
     <div className="flex h-screen">
       <Sidebar />
