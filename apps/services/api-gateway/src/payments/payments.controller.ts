@@ -6,6 +6,7 @@ import {
   UseGuards,
   SetMetadata,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -13,6 +14,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
+@ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly proxyService: ProxyService) {}

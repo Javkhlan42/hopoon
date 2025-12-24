@@ -11,6 +11,13 @@ import {
   UseGuards,
   SetMetadata,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
@@ -18,6 +25,7 @@ import { Throttle } from '@nestjs/throttler';
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
+@ApiTags('Rides')
 @Controller('rides')
 @UseGuards(JwtAuthGuard)
 export class RidesController {
@@ -30,6 +38,7 @@ export class RidesController {
 
   @Public()
   @Post()
+  @ApiOperation({ summary: 'Create a new ride' })
   async create(@Body() body: any, @Req() req: any) {
     const token = req.headers.authorization;
     return this.proxyService.post(this.rideServiceUrl, '/rides', body, {

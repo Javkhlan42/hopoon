@@ -1,36 +1,44 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@ApiTags('Bookings')
 @Controller('bookings')
 @UseGuards(JwtAuthGuard)
 export class BookingsController {
   private readonly bookingServiceUrl: string;
 
   constructor(private proxyService: ProxyService) {
-    this.bookingServiceUrl = process.env.BOOKING_SERVICE_URL || 'http://localhost:3004';
+    this.bookingServiceUrl =
+      process.env.BOOKING_SERVICE_URL || 'http://localhost:3004';
   }
 
   @Post()
   async create(@Body() body: any, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.post(
-      this.bookingServiceUrl,
-      '/bookings',
-      body,
-      { Authorization: token },
-    );
+    return this.proxyService.post(this.bookingServiceUrl, '/bookings', body, {
+      Authorization: token,
+    });
   }
 
   @Get()
   async findAll(@Query() query: any, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.get(
-      this.bookingServiceUrl,
-      '/bookings',
-      query,
-      { Authorization: token },
-    );
+    return this.proxyService.get(this.bookingServiceUrl, '/bookings', query, {
+      Authorization: token,
+    });
   }
 
   @Get('driver')
@@ -80,11 +88,9 @@ export class BookingsController {
   @Delete(':id')
   async cancel(@Param('id') id: string, @Req() req: any) {
     const token = req.headers.authorization;
-    return this.proxyService.delete(
-      this.bookingServiceUrl,
-      `/bookings/${id}`,
-      { Authorization: token },
-    );
+    return this.proxyService.delete(this.bookingServiceUrl, `/bookings/${id}`, {
+      Authorization: token,
+    });
   }
 
   @Patch(':id/complete')
