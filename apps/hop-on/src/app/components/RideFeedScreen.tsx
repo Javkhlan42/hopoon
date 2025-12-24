@@ -23,6 +23,7 @@ interface RideFeedScreenProps {
   onChat: (rideId: string) => void;
   onProfile: () => void;
   onStartTracking?: () => void;
+  onManageBookings?: () => void;
 }
 
 interface Ride {
@@ -166,7 +167,8 @@ export function RideFeedScreen({
   onJoinRide,
   onChat,
   onProfile,
-  onStartTracking 
+  onStartTracking,
+  onManageBookings
 }: RideFeedScreenProps) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -248,6 +250,12 @@ export function RideFeedScreen({
                     <User className="w-4 h-4 mr-2" />
                     Миний профайл
                   </DropdownMenuItem>
+                  {userRole === 'driver' && onManageBookings && (
+                    <DropdownMenuItem onClick={onManageBookings}>
+                      <Users2 className="w-4 h-4 mr-2" />
+                      Миний захиалгууд
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem>
                     <User className="w-4 h-4 mr-2" />
                     Гарах

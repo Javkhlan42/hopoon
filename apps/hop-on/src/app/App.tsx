@@ -11,6 +11,7 @@ import { ProfileScreen } from './components/ProfileScreen';
 import { BookingScreen } from './components/BookingScreen';
 import { LiveTrackingScreen } from './components/LiveTrackingScreen';
 import ChatScreen from '@/components/ChatScreen';
+import BookingManagementScreen from '@/components/BookingManagementScreen';
 import { SocketProvider } from '@/context/SocketContext';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
@@ -25,6 +26,7 @@ type Screen =
   | 'profile' 
   | 'chat' 
   | 'booking'
+  | 'bookingManagement'
   | 'tracking';
  
 export default function App() {
@@ -116,6 +118,7 @@ export default function App() {
             onChat={handleChat}
             onProfile={() => setCurrentScreen('profile')}
             onStartTracking={handleStartTracking}
+            onManageBookings={() => setCurrentScreen('bookingManagement')}
           />
         )}
 
@@ -151,6 +154,12 @@ export default function App() {
             onBack={() => setCurrentScreen('feed')}
             onConfirm={handleBookingConfirm}
             rideId={selectedRideId}
+          />
+        )}
+
+        {currentScreen === 'bookingManagement' && (
+          <BookingManagementScreen
+            onBack={() => setCurrentScreen('feed')}
           />
         )}
 
