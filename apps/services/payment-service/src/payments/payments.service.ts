@@ -1,9 +1,22 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Payment, PaymentStatus, PaymentType, PaymentMethod } from './payment.entity';
+import {
+  Payment,
+  PaymentStatus,
+  PaymentType,
+  PaymentMethod,
+} from './payment.entity';
 import { Wallet } from '../wallet/wallet.entity';
-import { CreatePaymentDto, ProcessRidePaymentDto, RefundPaymentDto } from './payments.dto';
+import {
+  CreatePaymentDto,
+  ProcessRidePaymentDto,
+  RefundPaymentDto,
+} from './payments.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -15,7 +28,10 @@ export class PaymentsService {
     private dataSource: DataSource,
   ) {}
 
-  async processRidePayment(userId: string, dto: ProcessRidePaymentDto): Promise<Payment> {
+  async processRidePayment(
+    userId: string,
+    dto: ProcessRidePaymentDto,
+  ): Promise<Payment> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -46,7 +62,9 @@ export class PaymentsService {
         const requiredAmount = parseFloat(bookingAmount.toString());
 
         if (currentBalance < requiredAmount) {
-          throw new BadRequestException(`Insufficient wallet balance. Current: ${currentBalance}, Required: ${requiredAmount}`);
+          throw new BadRequestException(
+            `Insufficient wallet balance. Current: ${currentBalance}, Required: ${requiredAmount}`,
+          );
         }
 
         wallet.balance = currentBalance - requiredAmount;

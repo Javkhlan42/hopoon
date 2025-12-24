@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request, SetMetadata } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  SetMetadata,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { ProcessRidePaymentDto, RefundPaymentDto } from './payments.dto';
 import { JwtAuthGuard, IS_PUBLIC_KEY } from '../auth/jwt-auth.guard';
@@ -12,14 +21,20 @@ export class PaymentsController {
 
   @Public()
   @Post('ride')
-  async processRidePayment(@Request() req, @Body() dto: ProcessRidePaymentDto & { userId?: string }) {
+  async processRidePayment(
+    @Request() req,
+    @Body() dto: ProcessRidePaymentDto & { userId?: string },
+  ) {
     const userId = dto.userId || req.user?.userId;
     return this.paymentsService.processRidePayment(userId, dto);
   }
 
   @Public()
   @Post('refund')
-  async refundPayment(@Request() req, @Body() dto: RefundPaymentDto & { userId?: string }) {
+  async refundPayment(
+    @Request() req,
+    @Body() dto: RefundPaymentDto & { userId?: string },
+  ) {
     const userId = dto.userId || req.user?.userId;
     return this.paymentsService.refundPayment(userId, dto);
   }
