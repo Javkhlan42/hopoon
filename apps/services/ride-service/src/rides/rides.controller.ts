@@ -10,6 +10,8 @@ import {
   UseGuards,
   Request,
   SetMetadata,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +20,7 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { RidesService } from './rides.service';
 import {
@@ -41,6 +44,8 @@ export class RidesController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new ride' })
   @ApiBody({ type: CreateRideDto })
+  @ApiResponse({ status: 201, description: 'Ride created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
   async create(@Body() createRideDto: CreateRideDto, @Request() req) {
     return this.ridesService.create(createRideDto, req.user.userId);
   }
@@ -75,10 +80,12 @@ export class RidesController {
   }
 
   @Patch(':id')
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update ride details' })
   @ApiParam({ name: 'id', description: 'Ride ID' })
   @ApiBody({ type: UpdateRideDto })
+  @ApiResponse({ status: 200, description: 'Ride updated successfully' })
   async update(
     @Param('id') id: string,
     @Body() updateRideDto: UpdateRideDto,
@@ -88,25 +95,31 @@ export class RidesController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cancel a ride' })
   @ApiParam({ name: 'id', description: 'Ride ID' })
+  @ApiResponse({ status: 200, description: 'Ride cancelled successfully' })
   async cancel(@Param('id') id: string, @Request() req) {
     return this.ridesService.cancel(id, req.user.userId);
   }
 
   @Patch(':id/start')
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Start a ride' })
   @ApiParam({ name: 'id', description: 'Ride ID' })
+  @ApiResponse({ status: 200, description: 'Ride started successfully' })
   async start(@Param('id') id: string, @Request() req) {
     return this.ridesService.startRide(id, req.user.userId);
   }
 
   @Patch(':id/complete')
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Complete a ride' })
   @ApiParam({ name: 'id', description: 'Ride ID' })
+  @ApiResponse({ status: 200, description: 'Ride completed successfully' })
   async complete(@Param('id') id: string, @Request() req) {
     return this.ridesService.completeRide(id, req.user.userId);
   }
