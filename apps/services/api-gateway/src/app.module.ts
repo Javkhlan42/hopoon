@@ -11,6 +11,8 @@ import { BookingsController } from './bookings/bookings.controller';
 import { PaymentsController } from './payments/payments.controller';
 import { ChatController } from './chat/chat.controller';
 import { NotificationsController } from './notifications/notifications.controller';
+import { AdminController } from './admin/admin.controller';
+import { AdminAuthController } from './admin/admin-auth.controller';
 import { ProxyService } from './proxy/proxy.service';
 import { JwtStrategy } from './auth/jwt.strategy';
 
@@ -36,6 +38,8 @@ import { JwtStrategy } from './auth/jwt.strategy';
     PaymentsController,
     ChatController,
     NotificationsController,
+    AdminController,
+    AdminAuthController,
   ],
   providers: [
     ProxyService,

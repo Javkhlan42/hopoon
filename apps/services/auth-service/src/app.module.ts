@@ -9,6 +9,7 @@ import { UsersService } from './users/users.service';
 import { User } from './users/user.entity';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { LocalStrategy } from './auth/local.strategy';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { LocalStrategy } from './auth/local.strategy';
       secret: process.env.JWT_SECRET || 'hopon-secret-key',
       signOptions: { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' },
     }),
+    AdminModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, UsersService, JwtStrategy, LocalStrategy],

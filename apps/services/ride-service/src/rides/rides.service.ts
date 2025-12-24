@@ -154,7 +154,8 @@ export class RidesService {
   async cancel(id: string, userId: string): Promise<Ride> {
     const ride = await this.findOne(id);
 
-    if (ride.driver_id !== userId) {
+    // Allow admin to cancel any ride, otherwise only driver can cancel
+    if (userId !== 'admin' && ride.driver_id !== userId) {
       throw new ForbiddenException('Only the driver can cancel this ride');
     }
 

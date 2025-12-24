@@ -102,4 +102,39 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  async adminLogin(email: string, password: string) {
+    // Simple admin check - in production, use separate admin table
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@hopon.mn';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (email !== adminEmail || password !== adminPassword) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    const payload = { 
+      sub: 'admin-1', 
+      email, 
+      role: 'superadmin' 
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '1d',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: '7d',
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      admin: {
+        id: 'admin-1',
+        email,
+        name: 'Admin',
+        role: 'superadmin',
+      },
+    };
+  }
 }

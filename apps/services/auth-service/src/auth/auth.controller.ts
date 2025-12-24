@@ -46,4 +46,10 @@ export class AuthController {
   async getProfile(@Request() req) {
     return req.user;
   }
+
+  @Post('admin/login')
+  async adminLogin(@Body() loginDto: { email: string; password: string }) {
+    // For now, simple admin login - can be enhanced with separate admin table
+    return this.authService.adminLogin(loginDto.email, loginDto.password);
+  }
 }
