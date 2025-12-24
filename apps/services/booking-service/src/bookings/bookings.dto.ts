@@ -1,8 +1,17 @@
-import { IsString, IsNotEmpty, IsInt, Min, Max, IsUUID, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  Min,
+  Max,
+  IsUUID,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { BookingStatus } from './booking.entity';
 
 export class CreateBookingDto {
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   rideId: string;
 

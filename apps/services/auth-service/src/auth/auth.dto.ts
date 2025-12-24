@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, MinLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEmail,
+  MinLength,
+  Matches,
+  IsEnum,
+} from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -9,6 +17,10 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/, {
+    message:
+      'Password must contain at least 8 characters, one letter and one number',
+  })
   password: string;
 
   @IsString()
@@ -18,6 +30,13 @@ export class RegisterDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsEnum(['passenger', 'driver', 'both'], {
+    message:
+      'role must be one of the following values: passenger, driver, both',
+  })
+  role?: 'passenger' | 'driver' | 'both';
 }
 
 export class LoginDto {

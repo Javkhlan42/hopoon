@@ -1,0 +1,229 @@
+{
+  "auth": {
+    "register_passenger": {
+      "phone": "+97699887766",
+      "password": "Password123",
+      "name": "Дорж Батаа",
+      "email": "dorj.bataa@email.com",
+      "role": "passenger"
+    },
+    "register_driver": {
+      "phone": "+97688776655",
+      "password": "Driver123",
+      "name": "Бат Сарнай",
+      "email": "bat.sarnai@email.com",
+      "role": "driver"
+    },
+    "login": {
+      "phone": "+97699887766",
+      "password": "Password123"
+    }
+  },
+  "rides": {
+    "create": {
+      "origin": {
+        "lat": 47.9184,
+        "lng": 106.9177,
+        "address": "Сүхбаатарын талбай, Улаанбаатар"
+      },
+      "destination": {
+        "lat": 47.9251,
+        "lng": 106.9060,
+        "address": "Зайсан толгой, Улаанбаатар"
+      },
+      "departureTime": "2025-12-25T14:00:00.000Z",
+      "availableSeats": 3,
+      "pricePerSeat": 5000
+    },
+    "create_long_distance": {
+      "origin": {
+        "lat": 47.9184,
+        "lng": 106.9177,
+        "address": "Улаанбаатар хот"
+      },
+      "destination": {
+        "lat": 49.0331,
+        "lng": 106.2757,
+        "address": "Дархан хот"
+      },
+      "departureTime": "2025-12-26T08:00:00.000Z",
+      "availableSeats": 4,
+      "pricePerSeat": 25000
+    },
+    "update": {
+      "availableSeats": 2,
+      "pricePerSeat": 6000
+    },
+    "search_params": {
+      "originLat": 47.9184,
+      "originLng": 106.9177,
+      "destLat": 47.9251,
+      "destLng": 106.9060,
+      "departureDate": "2025-12-25",
+      "maxRadius": 5000
+    }
+  },
+  "bookings": {
+    "create": {
+      "rideId": "550e8400-e29b-41d4-a716-446655440000",
+      "seats": 2
+    },
+    "reject": {
+      "reason": "Замаас хэт хол байна"
+    },
+    "query_params": {
+      "status": "pending",
+      "page": 1,
+      "limit": 10
+    }
+  },
+  "payments": {
+    "wallet_topup": {
+      "userId": "55d833a7-6479-451f-b3f2-1382b9902b04",
+      "amount": 50000,
+      "paymentMethod": "card"
+    },
+    "create_payment": {
+      "bookingId": "660e8400-e29b-41d4-a716-446655440000",
+      "amount": 10000,
+      "method": "wallet",
+      "description": "Аяллын төлбөр"
+    },
+    "process_ride_payment": {
+      "bookingId": "660e8400-e29b-41d4-a716-446655440000",
+      "method": "wallet"
+    },
+    "refund": {
+      "paymentId": "770e8400-e29b-41d4-a716-446655440000",
+      "reason": "Аялал цуцлагдсан"
+    }
+  },
+  "chat": {
+    "create_conversation": {
+      "type": "ride",
+      "title": "Аялалын чат",
+      "participantIds": [
+        "55d833a7-6479-451f-b3f2-1382b9902b04",
+        "66e944b8-7580-562g-c4g3-2493c0013c15"
+      ],
+      "rideId": "770e8400-e29b-41d4-a716-446655440002"
+    },
+    "create_group_conversation": {
+      "type": "group",
+      "title": "Улаанбаатар - Дархан аялагчид",
+      "participantIds": [
+        "55d833a7-6479-451f-b3f2-1382b9902b04",
+        "66e944b8-7580-562g-c4g3-2493c0013c15",
+        "77f055c9-8691-673h-d5h4-3504d1124d26"
+      ]
+    },
+    "send_message": {
+      "conversationId": "880e8400-e29b-41d4-a716-446655440000",
+      "type": "text",
+      "content": "Сайн байна уу? Хаана уулзах вэ?"
+    },
+    "send_location_message": {
+      "conversationId": "880e8400-e29b-41d4-a716-446655440000",
+      "type": "location",
+      "content": "Миний байршил",
+      "metadata": {
+        "lat": 47.9184,
+        "lng": 106.9177,
+        "address": "Сүхбаатарын талбай"
+      }
+    },
+    "mark_as_read": {
+      "conversationId": "880e8400-e29b-41d4-a716-446655440000"
+    },
+    "add_participant": {
+      "userId": "990e8400-e29b-41d4-a716-446655440003"
+    }
+  },
+  "notifications": {
+    "send_single": {
+      "userId": "55d833a7-6479-451f-b3f2-1382b9902b04",
+      "type": "booking_confirmed",
+      "channels": ["in_app", "push"],
+      "title": "Захиалга батлагдлаа",
+      "message": "Таны захиалга амжилттай батлагдлаа. Аялалын мэдээллийг харна уу.",
+      "data": {
+        "bookingId": "660e8400-e29b-41d4-a716-446655440000",
+        "rideId": "770e8400-e29b-41d4-a716-446655440002"
+      }
+    },
+    "send_bulk": {
+      "userIds": [
+        "55d833a7-6479-451f-b3f2-1382b9902b04",
+        "66e944b8-7580-562g-c4g3-2493c0013c15"
+      ],
+      "type": "ride_reminder",
+      "channels": ["in_app", "push", "sms"],
+      "title": "Аялал удахгүй эхэлнэ",
+      "message": "Таны аялал 30 минутын дараа эхэлнэ. Бэлэн байгаарай!",
+      "data": {
+        "rideId": "770e8400-e29b-41d4-a716-446655440002",
+        "departureTime": "2025-12-25T14:00:00.000Z"
+      }
+    }
+  },
+  "test_uuids": {
+    "passenger_user_id": "55d833a7-6479-451f-b3f2-1382b9902b04",
+    "driver_user_id": "66e944b8-7580-562g-c4g3-2493c0013c15",
+    "ride_id": "77f055c9-8691-673h-d5h4-3504d1124d26",
+    "booking_id": "88g166da-9702-784i-e6i5-4615e2235e37",
+    "payment_id": "99h277eb-a813-895j-f7j6-5726f3346f48",
+    "conversation_id": "aai388fc-b924-9a6k-g8k7-6837g4457g59",
+    "notification_id": "bbj499gd-ca35-ab7l-h9l8-7948h5568h6a"
+  },
+  "locations": {
+    "ulaanbaatar_center": {
+      "lat": 47.9184,
+      "lng": 106.9177,
+      "address": "Сүхбаатарын талбай, Улаанбаатар"
+    },
+    "zaisan": {
+      "lat": 47.9251,
+      "lng": 106.9060,
+      "address": "Зайсан толгой, Улаанбаатар"
+    },
+    "state_department_store": {
+      "lat": 47.9186,
+      "lng": 106.9175,
+      "address": "Их дэлгүүр, Улаанбаатар"
+    },
+    "chinggis_khaan_square": {
+      "lat": 47.9189,
+      "lng": 106.9178,
+      "address": "Чингисийн талбай, Улаанбаатар"
+    },
+    "darkhan_city": {
+      "lat": 49.0331,
+      "lng": 106.2757,
+      "address": "Дархан хот"
+    },
+    "erdenet_city": {
+      "lat": 49.0331,
+      "lng": 104.0731,
+      "address": "Эрдэнэт хот"
+    }
+  },
+  "enums": {
+    "user_roles": ["passenger", "driver", "both"],
+    "ride_status": ["scheduled", "active", "completed", "cancelled"],
+    "booking_status": ["pending", "approved", "rejected", "cancelled", "completed"],
+    "payment_methods": ["wallet", "card", "cash", "qpay"],
+    "payment_types": ["ride", "top_up", "refund"],
+    "notification_types": [
+      "booking_created",
+      "booking_confirmed",
+      "booking_rejected",
+      "ride_starting",
+      "ride_completed",
+      "payment_received",
+      "message_received"
+    ],
+    "notification_channels": ["in_app", "push", "email", "sms"],
+    "message_types": ["text", "image", "location", "system"],
+    "conversation_types": ["direct", "ride", "group"]
+  }
+}

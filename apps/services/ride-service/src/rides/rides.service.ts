@@ -1,8 +1,18 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ride, RideStatus } from './ride.entity';
-import { CreateRideDto, UpdateRideDto, SearchRidesDto, RideQueryDto } from './rides.dto';
+import {
+  CreateRideDto,
+  UpdateRideDto,
+  SearchRidesDto,
+  RideQueryDto,
+} from './rides.dto';
 
 @Injectable()
 export class RidesService {
@@ -12,7 +22,8 @@ export class RidesService {
   ) {}
 
   async create(createRideDto: CreateRideDto, driverId: string): Promise<Ride> {
-    const { origin, destination, departureTime, availableSeats, pricePerSeat } = createRideDto;
+    const { origin, destination, departureTime, availableSeats, pricePerSeat } =
+      createRideDto;
 
     // Validate departure time is in the future
     const departureDate = new Date(departureTime);
@@ -20,8 +31,8 @@ export class RidesService {
       throw new BadRequestException('Departure time must be in the future');
     }
 
-    // Create route geometry (simple line between origin and destination)
-    const routeGeometry = `SRID=4326;LINESTRING(${origin.lng} ${origin.lat}, ${destination.lng} ${destination.lat})`;
+    // Create route geometry using PostGIS function
+    const wkt = `LINESTRING(${origin.lng} ${origin.lat}, ${destination.lng} ${destination.lat})`;
 
     const ride = this.ridesRepository.create({
       driver_id: driverId,
@@ -31,7 +42,7 @@ export class RidesService {
       destination_lat: destination.lat,
       destination_lng: destination.lng,
       destination_address: destination.address,
-      route_geometry: routeGeometry,
+      route_geometry: () => `ST_GeomFromText('${wkt}', 4326)`,
       departure_time: departureDate,
       available_seats: availableSeats,
       price_per_seat: pricePerSeat,
@@ -50,7 +61,9 @@ export class RidesService {
       queryBuilder.where('ride.status = :status', { status });
     } else {
       // By default, only show active rides
-      queryBuilder.where('ride.status = :status', { status: RideStatus.ACTIVE });
+      queryBuilder.where('ride.status = :status', {
+        status: RideStatus.ACTIVE,
+      });
     }
 
     if (driverId) {
@@ -77,7 +90,11 @@ export class RidesService {
     return ride;
   }
 
-  async update(id: string, updateRideDto: UpdateRideDto, userId: string): Promise<Ride> {
+  async update(
+    id: string,
+    updateRideDto: UpdateRideDto,
+    userId: string,
+  ): Promise<Ride> {
     const ride = await this.findOne(id);
 
     // Only driver can update their own ride
@@ -87,7 +104,9 @@ export class RidesService {
 
     // Cannot update completed or cancelled rides
     if ([RideStatus.COMPLETED, RideStatus.CANCELLED].includes(ride.status)) {
-      throw new BadRequestException('Cannot update completed or cancelled rides');
+      throw new BadRequestException(
+        'Cannot update completed or cancelled rides',
+      );
     }
 
     // Update fields
@@ -135,7 +154,8 @@ export class RidesService {
   async cancel(id: string, userId: string): Promise<Ride> {
     const ride = await this.findOne(id);
 
-    if (ride.driver_id !== userId) {
+    // Allow admin to cancel any ride, otherwise only driver can cancel
+    if (userId !== 'admin' && ride.driver_id !== userId) {
       throw new ForbiddenException('Only the driver can cancel this ride');
     }
 
@@ -151,7 +171,9 @@ export class RidesService {
     return this.ridesRepository.save(ride);
   }
 
-  async search(searchDto: SearchRidesDto): Promise<{ data: Ride[]; total: number }> {
+  async search(
+    searchDto: SearchRidesDto,
+  ): Promise<{ data: Ride[]; total: number }> {
     const {
       originLat,
       originLng,
@@ -201,10 +223,13 @@ export class RidesService {
       const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
       const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
 
-      queryBuilder.andWhere('ride.departure_time BETWEEN :startOfDay AND :endOfDay', {
-        startOfDay,
-        endOfDay,
-      });
+      queryBuilder.andWhere(
+        'ride.departure_time BETWEEN :startOfDay AND :endOfDay',
+        {
+          startOfDay,
+          endOfDay,
+        },
+      );
     } else {
       // Only future rides
       queryBuilder.andWhere('ride.departure_time > :now', { now: new Date() });
@@ -230,7 +255,10 @@ export class RidesService {
     return { data, total };
   }
 
-  async updateAvailableSeats(rideId: string, seatsChange: number): Promise<Ride> {
+  async updateAvailableSeats(
+    rideId: string,
+    seatsChange: number,
+  ): Promise<Ride> {
     const ride = await this.findOne(rideId);
 
     const newAvailableSeats = ride.available_seats + seatsChange;

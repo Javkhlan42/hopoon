@@ -7,6 +7,7 @@ import { RidesController } from './rides/rides.controller';
 import { RidesService } from './rides/rides.service';
 import { Ride } from './rides/ride.entity';
 import { JwtStrategy } from './auth/jwt.strategy';
+import { AdminController } from './admin/admin.controller';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
       secret: process.env.JWT_SECRET || 'hopon-secret-key',
     }),
   ],
-  controllers: [RidesController],
+  controllers: [RidesController, AdminController],
   providers: [RidesService, JwtStrategy],
 })
 export class AppModule {}

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
@@ -14,16 +19,20 @@ export class BookingsService {
     private httpService: HttpService,
   ) {}
 
-  async create(createBookingDto: CreateBookingDto, userId: string): Promise<Booking> {
+  async create(
+    createBookingDto: CreateBookingDto,
+    userId: string,
+  ): Promise<Booking> {
     const { rideId, seats } = createBookingDto;
 
     // Fetch ride details from ride-service
-    const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+    const rideServiceUrl =
+      process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
     let ride;
-    
+
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${rideServiceUrl}/rides/${rideId}`)
+        this.httpService.get(`${rideServiceUrl}/rides/${rideId}`),
       );
       ride = response.data;
     } catch (error) {
@@ -35,11 +44,13 @@ export class BookingsService {
       throw new BadRequestException('Ride is not available for booking');
     }
 
-    if (ride.availableSeats < seats) {
-      throw new BadRequestException(`Only ${ride.availableSeats} seats available`);
+    const availableSeats = ride.available_seats || ride.availableSeats;
+    if (availableSeats < seats) {
+      throw new BadRequestException(`Only ${availableSeats} seats available`);
     }
 
-    if (ride.driverId === userId) {
+    const driverId = ride.driver_id || ride.driverId;
+    if (driverId === userId) {
       throw new BadRequestException('Cannot book your own ride');
     }
 
@@ -53,11 +64,14 @@ export class BookingsService {
     });
 
     if (existingBooking) {
-      throw new BadRequestException('You already have a pending booking for this ride');
+      throw new BadRequestException(
+        'You already have a pending booking for this ride',
+      );
     }
 
     // Calculate price
-    const totalPrice = ride.pricePerSeat * seats;
+    const pricePerSeat = ride.price_per_seat || ride.pricePerSeat;
+    const totalPrice = pricePerSeat * seats;
 
     // Create booking
     const booking = this.bookingsRepository.create({
@@ -76,10 +90,14 @@ export class BookingsService {
     return savedBooking;
   }
 
-  async findAll(query: BookingQueryDto, userId: string): Promise<{ data: Booking[]; total: number }> {
+  async findAll(
+    query: BookingQueryDto,
+    userId: string,
+  ): Promise<{ data: Booking[]; total: number }> {
     const { status, rideId, page = 1, limit = 20 } = query;
 
-    const queryBuilder = this.bookingsRepository.createQueryBuilder('booking')
+    const queryBuilder = this.bookingsRepository
+      .createQueryBuilder('booking')
       .where('booking.passenger_id = :userId', { userId });
 
     if (status) {
@@ -110,10 +128,11 @@ export class BookingsService {
     // Check if user has access to this booking
     if (booking.passenger_id !== userId) {
       // Also check if user is the driver (fetch from ride service)
-      const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+      const rideServiceUrl =
+        process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
       try {
         const response = await firstValueFrom(
-          this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`)
+          this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
         );
         if (response.data.driverId !== userId) {
           throw new ForbiddenException('Access denied');
@@ -134,10 +153,11 @@ export class BookingsService {
     }
 
     // Verify driver owns this ride
-    const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+    const rideServiceUrl =
+      process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`)
+        this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
       );
       if (response.data.driverId !== driverId) {
         throw new ForbiddenException('Only the driver can approve bookings');
@@ -160,7 +180,11 @@ export class BookingsService {
     return booking;
   }
 
-  async reject(id: string, driverId: string, reason?: string): Promise<Booking> {
+  async reject(
+    id: string,
+    driverId: string,
+    reason?: string,
+  ): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({ where: { id } });
 
     if (!booking) {
@@ -168,10 +192,11 @@ export class BookingsService {
     }
 
     // Verify driver owns this ride
-    const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+    const rideServiceUrl =
+      process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`)
+        this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
       );
       if (response.data.driverId !== driverId) {
         throw new ForbiddenException('Only the driver can reject bookings');
@@ -200,10 +225,14 @@ export class BookingsService {
     }
 
     if (booking.passenger_id !== userId) {
-      throw new ForbiddenException('Only the passenger can cancel their booking');
+      throw new ForbiddenException(
+        'Only the passenger can cancel their booking',
+      );
     }
 
-    if (![BookingStatus.PENDING, BookingStatus.APPROVED].includes(booking.status)) {
+    if (
+      ![BookingStatus.PENDING, BookingStatus.APPROVED].includes(booking.status)
+    ) {
       throw new BadRequestException('Cannot cancel this booking');
     }
 
@@ -234,16 +263,20 @@ export class BookingsService {
     return booking;
   }
 
-  async getDriverBookings(driverId: string, query: BookingQueryDto): Promise<{ data: Booking[]; total: number }> {
+  async getDriverBookings(
+    driverId: string,
+    query: BookingQueryDto,
+  ): Promise<{ data: Booking[]; total: number }> {
     const { status, page = 1, limit = 20 } = query;
 
     // Get all rides for this driver from ride-service
-    const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+    const rideServiceUrl =
+      process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
     let rideIds: string[] = [];
 
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${rideServiceUrl}/rides?driverId=${driverId}`)
+        this.httpService.get(`${rideServiceUrl}/rides?driverId=${driverId}`),
       );
       rideIds = response.data.map((ride: any) => ride.id);
     } catch (error) {
@@ -254,7 +287,8 @@ export class BookingsService {
       return { data: [], total: 0 };
     }
 
-    const queryBuilder = this.bookingsRepository.createQueryBuilder('booking')
+    const queryBuilder = this.bookingsRepository
+      .createQueryBuilder('booking')
       .where('booking.ride_id IN (:...rideIds)', { rideIds });
 
     if (status) {

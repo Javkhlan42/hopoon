@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -12,25 +16,37 @@ export class AuthService {
 
   async validateUser(phone: string, password: string): Promise<any> {
     const user = await this.usersService.findByPhone(phone);
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user;
       return result;
     }
     return null;
   }
 
-  async register(phone: string, password: string, name: string, email?: string) {
+  async register(
+    phone: string,
+    password: string,
+    name: string,
+    email?: string,
+    role?: 'passenger' | 'driver' | 'both',
+  ) {
     const existingUser = await this.usersService.findByPhone(phone);
     if (existingUser) {
       throw new ConflictException('Phone number already registered');
     }
 
-    const user = await this.usersService.create(phone, password, name, email);
+    const user = await this.usersService.create(
+      phone,
+      password,
+      name,
+      email,
+      role,
+    );
     const { password: _, ...result } = user;
-    
+
     return {
       user: result,
-      ...await this.generateTokens(user.id, user.phone, user.role),
+      ...(await this.generateTokens(user.id, user.phone, user.role)),
     };
   }
 
@@ -42,7 +58,7 @@ export class AuthService {
 
     return {
       user,
-      ...await this.generateTokens(user.id, user.phone, user.role),
+      ...(await this.generateTokens(user.id, user.phone, user.role)),
     };
   }
 
@@ -84,6 +100,41 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+
+  async adminLogin(email: string, password: string) {
+    // Simple admin check - in production, use separate admin table
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@hopon.mn';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (email !== adminEmail || password !== adminPassword) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    const payload = { 
+      sub: 'admin-1', 
+      email, 
+      role: 'superadmin' 
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '1d',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: '7d',
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      admin: {
+        id: 'admin-1',
+        email,
+        name: 'Admin',
+        role: 'superadmin',
+      },
     };
   }
 }

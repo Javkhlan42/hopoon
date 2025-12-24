@@ -35,7 +35,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
-    
+
     // Remove socket from user mapping
     for (const [userId, sockets] of this.userSockets.entries()) {
       const index = sockets.indexOf(client.id);
@@ -56,14 +56,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { userId: string },
   ) {
     const { userId } = payload;
-    
+
     if (!this.userSockets.has(userId)) {
       this.userSockets.set(userId, []);
     }
-    
+
     this.userSockets.get(userId).push(client.id);
     this.logger.log(`User ${userId} authenticated with socket ${client.id}`);
-    
+
     client.emit('authenticated', { success: true });
     this.broadcastUserStatus(userId, 'online');
   }
@@ -74,6 +74,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: any,
   ) {
     try {
+      // Support both conversation-based and ride-based messaging
+      if (payload.rideId) {
+        // Ride-based messaging (simple broadcast)
+        const roomName = `ride:${payload.rideId}`;
+        const messageData = {
+          id: Date.now().toString(),
+          rideId: payload.rideId,
+          senderId: payload.userId || 'unknown',
+          senderName: payload.senderName,
+          content: payload.content,
+          type: payload.type || 'text',
+          timestamp: new Date().toISOString(),
+        };
+
+        // Broadcast to ride room (excluding sender)
+        client.to(roomName).emit('message', messageData);
+
+        // Send confirmation to sender
+        client.emit('message_sent', { success: true, message: messageData });
+
+        this.logger.log(
+          `Message sent to ride ${payload.rideId} from ${payload.userId}`,
+        );
+        return;
+      }
+
+      // Conversation-based messaging (original logic)
       const message = await this.messagesService.sendMessage(payload.userId, {
         conversationId: payload.conversationId,
         type: payload.type,
@@ -109,7 +136,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('typing')
   handleTyping(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { userId: string; conversationId: string; isTyping: boolean },
+    @MessageBody()
+    payload: { userId: string; conversationId: string; isTyping: boolean },
   ) {
     this.server.to(payload.conversationId).emit('user_typing', {
       userId: payload.userId,
@@ -139,7 +167,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { conversationId: string },
   ) {
     client.join(payload.conversationId);
-    this.logger.log(`Socket ${client.id} joined conversation ${payload.conversationId}`);
+    this.logger.log(
+      `Socket ${client.id} joined conversation ${payload.conversationId}`,
+    );
+  }
+
+  @SubscribeMessage('join_ride')
+  handleJoinRide(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { rideId: string },
+  ) {
+    const roomName = `ride:${payload.rideId}`;
+    client.join(roomName);
+    this.logger.log(`Socket ${client.id} joined ride ${payload.rideId}`);
+    client.emit('joined_ride', { success: true, rideId: payload.rideId });
   }
 
   @SubscribeMessage('leave_conversation')
@@ -148,18 +189,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { conversationId: string },
   ) {
     client.leave(payload.conversationId);
-    this.logger.log(`Socket ${client.id} left conversation ${payload.conversationId}`);
+    this.logger.log(
+      `Socket ${client.id} left conversation ${payload.conversationId}`,
+    );
   }
 
   sendToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);
-    
+
     if (sockets && sockets.length > 0) {
       sockets.forEach((socketId) => {
         this.server.to(socketId).emit(event, data);
       });
-      
-      this.logger.log(`Event '${event}' sent to user ${userId} via ${sockets.length} socket(s)`);
+
+      this.logger.log(
+        `Event '${event}' sent to user ${userId} via ${sockets.length} socket(s)`,
+      );
     }
   }
 
