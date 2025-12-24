@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, MapPin, User, CheckCircle, ChevronDown, Calendar, Users2,  Clock, Star } from 'lucide-react';
+import { Plus, Search, MapPin, User, CheckCircle, ChevronDown, Calendar, Users2,  Clock, Star, MessageCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -7,6 +7,7 @@ import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
+import { RideCardMap } from './RideCardMap';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,16 @@ interface Ride {
   seatsAvailable: number;
   totalSeats: number;
   popular?: boolean;
+  origin: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+  destination: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
 }
 
 const mockRides: Ride[] = [
@@ -57,6 +68,8 @@ const mockRides: Ride[] = [
     seatsAvailable: 2,
     totalSeats: 4,
     popular: true,
+    origin: { lat: 47.9184, lng: 106.9177, address: 'Улаанбаатар' },
+    destination: { lat: 49.4871, lng: 105.9057, address: 'Дархан' },
   },
   {
     id: '2',
@@ -72,6 +85,8 @@ const mockRides: Ride[] = [
     price: 15000,
     seatsAvailable: 3,
     totalSeats: 4,
+    origin: { lat: 47.9184, lng: 106.9177, address: 'Улаанбаатар' },
+    destination: { lat: 49.0333, lng: 104.0833, address: 'Эрдэнэт' },
   },
   {
     id: '3',
@@ -87,6 +102,8 @@ const mockRides: Ride[] = [
     price: 20000,
     seatsAvailable: 1,
     totalSeats: 3,
+    origin: { lat: 47.9184, lng: 106.9177, address: 'Улаанбаатар' },
+    destination: { lat: 47.3083, lng: 110.6522, address: 'Өндөрхаан' },
   },
   {
     id: '4',
@@ -102,6 +119,8 @@ const mockRides: Ride[] = [
     price: 17000,
     seatsAvailable: 4,
     totalSeats: 4,
+    origin: { lat: 47.9184, lng: 106.9177, address: 'Улаанбаатар' },
+    destination: { lat: 49.4871, lng: 105.9057, address: 'Дархан' },
   },
   {
     id: '5',
@@ -117,6 +136,8 @@ const mockRides: Ride[] = [
     price: 16000,
     seatsAvailable: 2,
     totalSeats: 4,
+    origin: { lat: 47.9184, lng: 106.9177, address: 'Улаанбаатар' },
+    destination: { lat: 49.0333, lng: 104.0833, address: 'Эрдэнэт' },
   },
   {
     id: '6',
@@ -133,6 +154,8 @@ const mockRides: Ride[] = [
     seatsAvailable: 3,
     totalSeats: 4,
     popular: true,
+    origin: { lat: 47.9184, lng: 106.9177, address: 'Улаанбаатар' },
+    destination: { lat: 47.3083, lng: 110.6522, address: 'Өндөрхаан' },
   },
 ];
 
@@ -195,6 +218,13 @@ export function RideFeedScreen({
               <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <Search className="w-5 h-5" />
                 <span>Хайх</span>
+              </button>
+              <button 
+                onClick={() => onChat('')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span>Мессеж</span>
               </button>
               <button 
                 onClick={onCreateRide}
@@ -413,63 +443,74 @@ export function RideFeedScreen({
               {filteredRides.map((ride) => (
                 <Card key={ride.id} className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-5">
-                    <div className="flex items-center justify-between">
-                      {/* Left: Time and Route */}
-                      <div className="flex items-center gap-6 flex-1">
-                        {/* Departure Time */}
-                        <div className="text-center">
-                          <div className="text-xl font-bold">{ride.departureTime}</div>
-                          <div className="text-xs text-gray-500">{ride.duration}</div>
+                    <div className="flex items-center gap-4">
+                      {/* Map Section */}
+                      <div className="w-48 h-24 flex-shrink-0 rounded-lg overflow-hidden">
+                        <RideCardMap 
+                          origin={ride.origin}
+                          destination={ride.destination}
+                        />
+                      </div>
+
+                      {/* Main Content */}
+                      <div className="flex items-center justify-between flex-1">
+                        {/* Left: Time and Route */}
+                        <div className="flex items-center gap-6 flex-1">
+                          {/* Departure Time */}
+                          <div className="text-center">
+                            <div className="text-xl font-bold">{ride.departureTime}</div>
+                            <div className="text-xs text-gray-500">{ride.duration}</div>
+                          </div>
+
+                          {/* Route Visualization */}
+                          <div className="flex-1 max-w-xs">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <div className="text-sm font-medium mb-1">{ride.from}</div>
+                                <div className="h-px bg-gray-300 relative">
+                                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#00AFF5' }}></div>
+                                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#00AFF5' }}></div>
+                                </div>
+                                <div className="text-sm font-medium mt-1">{ride.to}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Arrival Time */}
+                          <div className="text-center">
+                            <div className="text-xl font-bold">{ride.arrivalTime}</div>
+                          </div>
                         </div>
 
-                        {/* Route Visualization */}
-                        <div className="flex-1 max-w-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium mb-1">{ride.from}</div>
-                              <div className="h-px bg-gray-300 relative">
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#00AFF5' }}></div>
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#00AFF5' }}></div>
-                              </div>
-                              <div className="text-sm font-medium mt-1">{ride.to}</div>
+                        {/* Middle: Driver Info */}
+                        <div className="flex items-center gap-3 px-6">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={ride.driverPhoto} alt={ride.driverName} />
+                            <AvatarFallback>{ride.driverName[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium text-sm">{ride.driverName}</div>
+                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              <span>{ride.driverRating}</span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Arrival Time */}
-                        <div className="text-center">
-                          <div className="text-xl font-bold">{ride.arrivalTime}</div>
-                        </div>
-                      </div>
-
-                      {/* Middle: Driver Info */}
-                      <div className="flex items-center gap-3 px-6">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={ride.driverPhoto} alt={ride.driverName} />
-                          <AvatarFallback>{ride.driverName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-sm">{ride.driverName}</div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            <span>{ride.driverRating}</span>
+                        {/* Right: Price and Seats */}
+                        <div className="text-right">
+                          <div className="text-2xl font-bold" style={{ color: '#00AFF5' }}>
+                            ₮{ride.price.toLocaleString()}
                           </div>
-                        </div>
-                      </div>
-
-                      {/* Right: Price and Seats */}
-                      <div className="text-right">
-                        <div className="text-2xl font-bold" style={{ color: '#00AFF5' }}>
-                          ₮{ride.price.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {ride.seatsAvailable > 0 ? (
-                            <span className="text-green-600">
-                              {ride.seatsAvailable} суудал үлдсэн
-                            </span>
-                          ) : (
-                            <span className="text-red-600 font-medium">Дүүрсэн</span>
-                          )}
+                          <div className="text-sm text-gray-600 mt-1">
+                            {ride.seatsAvailable > 0 ? (
+                              <span className="text-green-600">
+                                {ride.seatsAvailable} суудал үлдсэн
+                              </span>
+                            ) : (
+                              <span className="text-red-600 font-medium">Дүүрсэн</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

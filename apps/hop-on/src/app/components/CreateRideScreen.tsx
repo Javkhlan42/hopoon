@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { MapView } from './MapView';
 import { Switch } from './ui/switch';
 import { Textarea } from './ui/textarea';
+import api from '../../lib/api';
+import { toast } from 'sonner';
 
 interface CreateRideScreenProps {
   onBack: () => void;
@@ -22,10 +24,54 @@ export function CreateRideScreen({ onBack, onCreateRide }: CreateRideScreenProps
   const [seats, setSeats] = useState(3);
   const [isRecurring, setIsRecurring] = useState(false);
   const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleCreate = () => {
-    // Validation would go here
-    onCreateRide();
+  const handleCreate = async () => {
+    // Validation
+    if (!from || !to || !date || !time || !price) {
+      toast.error('Бүх талбаруудыг бөглөнө үү');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Combine date and time for departureTime
+      const departureTime = new Date(`${date}T${time}`).toISOString();
+
+      // TODO: Geocoding - хаягуудаас coordinates олох
+      // Жишээ coordinates (Улаанбаатар -> Дархан)
+      const originLat = 47.9184;
+      const originLng = 106.9177;
+      const destinationLat = 49.4871;
+      const destinationLng = 105.9057;
+
+      const response = await api.rides.create({
+        origin: {
+          lat: originLat,
+          lng: originLng,
+          address: from,
+        },
+        destination: {
+          lat: destinationLat,
+          lng: destinationLng,
+          address: to,
+        },
+        departureTime,
+        availableSeats: seats,
+        pricePerSeat: parseInt(price),
+        notes,
+      });
+
+      if (response.success) {
+        toast.success('Зорчилт амжилттай үүслээ!');
+        onCreateRide();
+      }
+    } catch (error: any) {
+      console.error('Create ride error:', error);
+      toast.error(error.message || 'Зорчилт үүсгэхэд алдаа гарлаа');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -233,9 +279,9 @@ export function CreateRideScreen({ onBack, onCreateRide }: CreateRideScreenProps
           <Button
             className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-full text-lg"
             onClick={handleCreate}
-            disabled={!from || !to || !date || !time || !price}
+            disabled={!from || !to || !date || !time || !price || loading}
           >
-            Publish ride
+            {loading ? 'Уншиж байна...' : 'Publish ride'}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>

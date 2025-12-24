@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Calendar, Clock, Users, MessageSquare, Check, X, Star, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -6,16 +6,67 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import api from '../../lib/api';
+import { toast } from 'sonner';
 
 interface BookingScreenProps {
   onBack: () => void;
   onConfirm: () => void;
+  rideId?: string;
 }
 
-export function BookingScreen({ onBack, onConfirm }: BookingScreenProps) {
+export function BookingScreen({ onBack, onConfirm, rideId }: BookingScreenProps) {
   const [seats, setSeats] = useState(1);
   const [pickupNote, setPickupNote] = useState('');
+  const [rideDetails, setRideDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const pricePerSeat = 5000;
+
+  // Зорчилтын дэлгэрэнгүй мэдээлэл татах
+  useEffect(() => {
+    if (rideId) {
+      fetchRideDetails();
+    }
+  }, [rideId]);
+
+  const fetchRideDetails = async () => {
+    if (!rideId) return;
+    
+    try {
+      const response = await api.rides.getById(rideId);
+      if (response.success && response.data) {
+        setRideDetails(response.data);
+      }
+    } catch (error) {
+      console.error('Ride details fetch error:', error);
+      toast.error('Зорчилтын мэдээлэл татахад алдаа гарлаа');
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!rideId) {
+      toast.error('Зорчилт сонгоогүй байна');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.bookings.create({
+        rideId,
+        seats,
+      });
+
+      if (response.success) {
+        toast.success('Захиалга амжилттай үүслээ!');
+        onConfirm();
+      }
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast.error(error.message || 'Захиалга үүсгэхэд алдаа гарлаа');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -202,9 +253,10 @@ export function BookingScreen({ onBack, onConfirm }: BookingScreenProps) {
         <div className="pb-8">
           <Button
             className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-full text-lg"
-            onClick={onConfirm}
+            onClick={handleConfirmBooking}
+            disabled={loading}
           >
-            Confirm booking
+            {loading ? 'Уншиж байна...' : 'Confirm booking'}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
