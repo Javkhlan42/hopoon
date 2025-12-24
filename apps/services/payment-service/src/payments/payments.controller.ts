@@ -7,6 +7,8 @@ import {
   UseGuards,
   Request,
   SetMetadata,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { ProcessRidePaymentDto, RefundPaymentDto } from './payments.dto';
@@ -21,6 +23,7 @@ export class PaymentsController {
 
   @Public()
   @Post('ride')
+  @HttpCode(HttpStatus.OK)
   async processRidePayment(
     @Request() req,
     @Body() dto: ProcessRidePaymentDto & { userId?: string },
@@ -31,6 +34,7 @@ export class PaymentsController {
 
   @Public()
   @Post('refund')
+  @HttpCode(HttpStatus.OK)
   async refundPayment(
     @Request() req,
     @Body() dto: RefundPaymentDto & { userId?: string },

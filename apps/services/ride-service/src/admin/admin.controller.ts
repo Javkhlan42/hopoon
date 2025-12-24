@@ -7,6 +7,8 @@ import {
   Param,
   Query,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiParam,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
@@ -80,16 +83,20 @@ export class AdminController {
   }
 
   @Post('rides/:id/cancel')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel a ride' })
   @ApiParam({ name: 'id', description: 'Ride ID' })
+  @ApiResponse({ status: 200, description: 'Ride cancelled successfully' })
   async cancelRide(@Param('id') id: string, @Body() body: { reason?: string }) {
     // Would need to implement cancel functionality in rides service
     return { success: true, message: 'Ride cancelled' };
   }
 
   @Delete('rides/:id')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a ride (soft delete)' })
   @ApiParam({ name: 'id', description: 'Ride ID' })
+  @ApiResponse({ status: 200, description: 'Ride deleted successfully' })
   async deleteRide(@Param('id') id: string) {
     // Soft delete by cancelling the ride
     await this.ridesService.cancel(id, 'admin');

@@ -1,6 +1,23 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { BookingsService } from './bookings.service';
-import { CreateBookingDto, BookingQueryDto, UpdateBookingStatusDto } from './bookings.dto';
+import {
+  CreateBookingDto,
+  BookingQueryDto,
+  UpdateBookingStatusDto,
+} from './bookings.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('bookings')
@@ -29,11 +46,13 @@ export class BookingsController {
   }
 
   @Patch(':id/approve')
+  @HttpCode(HttpStatus.OK)
   async approve(@Param('id') id: string, @Request() req) {
     return this.bookingsService.approve(id, req.user.userId);
   }
 
   @Patch(':id/reject')
+  @HttpCode(HttpStatus.OK)
   async reject(
     @Param('id') id: string,
     @Body() body: { reason?: string },
@@ -43,6 +62,7 @@ export class BookingsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.OK)
   async cancel(@Param('id') id: string, @Request() req) {
     return this.bookingsService.cancel(id, req.user.userId);
   }

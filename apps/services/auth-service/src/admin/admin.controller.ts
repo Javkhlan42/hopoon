@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiParam,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
@@ -70,20 +73,28 @@ export class AdminController {
   }
 
   @Post('users/:id/block')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Block a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User blocked successfully' })
   async blockUser(@Param('id') id: string, @Body() body: { reason?: string }) {
     return this.adminService.blockUser(id, body.reason);
   }
 
   @Post('users/:id/unblock')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unblock a user' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User unblocked successfully' })
   async unblockUser(@Param('id') id: string) {
     return this.adminService.unblockUser(id);
   }
 
   @Delete('users/:id')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
   async deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);
   }

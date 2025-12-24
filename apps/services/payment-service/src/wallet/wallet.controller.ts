@@ -6,6 +6,8 @@ import {
   UseGuards,
   Request,
   SetMetadata,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { TopUpWalletDto } from '../payments/payments.dto';
@@ -27,6 +29,7 @@ export class WalletController {
 
   @Public()
   @Post('topup')
+  @HttpCode(HttpStatus.OK)
   async topUpWallet(
     @Request() req,
     @Body() dto: TopUpWalletDto & { userId?: string },
