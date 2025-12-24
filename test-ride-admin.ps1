@@ -57,6 +57,11 @@ $loginBody = @{
 $loginResult = Invoke-Request -Uri "$gateway/auth/login" -Method POST -Body $loginBody
 
 if ($loginResult) {
+    # Show full response structure
+    Write-Host "`n=== LOGIN RESPONSE ===" -ForegroundColor Magenta
+    Write-Host ($loginResult | ConvertTo-Json -Depth 5) -ForegroundColor DarkGray
+    Write-Host "======================`n" -ForegroundColor Magenta
+    
     $script:token = $loginResult.accessToken
     $userId = $loginResult.user.id
     Write-Host "[OK] Logged in as: $($loginResult.user.name) (ID: $userId)" -ForegroundColor Green
