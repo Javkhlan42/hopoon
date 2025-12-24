@@ -1,3 +1,10 @@
+import './globals.css';
+
+export const metadata = {
+  title: 'HopOn Admin Dashboard',
+  description: 'Admin panel for HopOn carpooling platform',
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -5,7 +12,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen bg-background antialiased">{children}</body>
     </html>
   );
 }

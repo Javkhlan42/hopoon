@@ -108,4 +108,39 @@ export class AuthController {
       { Authorization: token },
     );
   }
+
+  @Public()
+  @Post('admin/login')
+  @ApiOperation({ summary: 'Admin login' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'password'],
+      properties: {
+        email: {
+          type: 'string',
+          format: 'email',
+          example: 'admin@hopon.mn',
+          description: 'Admin email',
+        },
+        password: {
+          type: 'string',
+          example: 'admin123',
+          description: 'Admin password',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Admin login successful, returns JWT token',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid admin credentials' })
+  async adminLogin(@Body() body: any) {
+    return this.proxyService.post(
+      this.authServiceUrl,
+      '/auth/admin/login',
+      body,
+    );
+  }
 }

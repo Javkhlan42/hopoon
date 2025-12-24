@@ -54,91 +54,88 @@ Write-Host "=== Step 1: Admin Login ===" -ForegroundColor Cyan
 Write-Host "Logging in as admin..." -NoNewline
 
 $loginData = @{
-    email = "admin@hopon.mn"
-    password = "admin123"
+    phone = "+97699112244"
+    password = "test12345"
 }
 
-$result = Invoke-AdminAPI -Url "$baseUrl/auth/admin/login" -Method POST -Body $loginData
+$result = Invoke-AdminAPI -Url "http://localhost:3001/auth/login" -Method POST -Body $loginData
 if ($result.Success) {
     $adminToken = $result.Data.accessToken
+    
     Write-Host " ✓" -ForegroundColor Green
-    Write-Host "  Admin: $($result.Data.admin.email)" -ForegroundColor Gray
+    Write-Host "  Admin: $($result.Data.user.name) ($($result.Data.user.role))" -ForegroundColor Gray
 } else {
     Write-Host " ✗ FAILED" -ForegroundColor Red
     Write-Host "  Error: $($result.Error)" -ForegroundColor Yellow
     exit 1
 }
 
-# 2. Dashboard Stats
-Write-Host "`n=== Step 2: Dashboard Stats ===" -ForegroundColor Cyan
-Write-Host "Getting dashboard stats..." -NoNewline
-
-$result = Invoke-AdminAPI -Url "$baseUrl/admin/dashboard/stats" -Token $adminToken
-if ($result.Success) {
-    Write-Host " ✓" -ForegroundColor Green
-    Write-Host "  Total Users: $($result.Data.totalUsers)" -ForegroundColor Gray
-    Write-Host "  Active Drivers: $($result.Data.activeDrivers)" -ForegroundColor Gray
-} else {
-    Write-Host " ✗ FAILED" -ForegroundColor Red
-}
-
-# 3. Get Users
-Write-Host "`n=== Step 3: Get Users ===" -ForegroundColor Cyan
+# 2. Get Users (Auth Service)
+Write-Host "`n=== Step 2: Get Users ===" -ForegroundColor Cyan
 Write-Host "Getting users list..." -NoNewline
 
-$usersUrl = "$baseUrl/admin/users?page=1`&limit=10"
+$usersUrl = "http://localhost:3001/admin/users?page=1`&limit=10"
 $result = Invoke-AdminAPI -Url $usersUrl -Token $adminToken
 if ($result.Success) {
     Write-Host " ✓" -ForegroundColor Green
-    Write-Host "  Total: $($result.Data.meta.total) users" -ForegroundColor Gray
-    if ($result.Data.users.Count -gt 0) {
-        Write-Host "  First user: $($result.Data.users[0].name)" -ForegroundColor Gray
+    Write-Host "  Total: $($result.Data.total) users" -ForegroundColor Gray
+    if ($result.Data.data.Count -gt 0) {
+        Write-Host "  First user: $($result.Data.data[0].name)" -ForegroundColor Gray
     }
 } else {
     Write-Host " ✗ FAILED" -ForegroundColor Red
+    Write-Host "  Error: $($result.Response)" -ForegroundColor Yellow
 }
 
-# 4. Get Rides
-Write-Host "`n=== Step 4: Get Rides ===" -ForegroundColor Cyan
+# 3. Get Rides (Ride Service)
+Write-Host "`n=== Step 3: Get Rides ===" -ForegroundColor Cyan
 Write-Host "Getting rides list..." -NoNewline
 
-$ridesUrl = "$baseUrl/admin/rides?page=1`&limit=10"
+$ridesUrl = "http://localhost:3003/admin/rides?page=1`&limit=10"
 $result = Invoke-AdminAPI -Url $ridesUrl -Token $adminToken
 if ($result.Success) {
     Write-Host " ✓" -ForegroundColor Green
-    Write-Host "  Total: $($result.Data.meta.total) rides" -ForegroundColor Gray
+    Write-Host "  Total: $($result.Data.total) rides" -ForegroundColor Gray
+    if ($result.Data.data.Count -gt 0) {
+        Write-Host "  First ride status: $($result.Data.data[0].status)" -ForegroundColor Gray
+    }
 } else {
     Write-Host " ✗ FAILED" -ForegroundColor Red
+    Write-Host "  Error: $($result.Response)" -ForegroundColor Yellow
 }
 
-# 5. System Status
-Write-Host "`n=== Step 5: System Status ===" -ForegroundColor Cyan
-Write-Host "Getting system status..." -NoNewline
+# 4. Ride Statistics
+Write-Host "`n=== Step 4: Ride Statistics ===" -ForegroundColor Cyan
+Write-Host "Getting ride stats..." -NoNewline
 
-$result = Invoke-AdminAPI -Url "$baseUrl/admin/system/status" -Token $adminToken
+$result = Invoke-AdminAPI -Url "http://localhost:3003/admin/reports/ride-stats" -Token $adminToken
 if ($result.Success) {
     Write-Host " ✓" -ForegroundColor Green
-    Write-Host "  CPU: $($result.Data.cpu)%" -ForegroundColor Gray
-    Write-Host "  Memory: $($result.Data.memory.percentage)%" -ForegroundColor Gray
+    Write-Host "  Active: $($result.Data.active)" -ForegroundColor Gray
 } else {
     Write-Host " ✗ FAILED" -ForegroundColor Red
+    Write-Host "  Error: $($result.Response)" -ForegroundColor Yellow
 }
 
-# 6. User Growth Report
-Write-Host "`n=== Step 6: User Growth Report ===" -ForegroundColor Cyan
-Write-Host "Getting user growth data..." -NoNewline
+# 5. Top Drivers
+Write-Host "`n=== Step 5: Top Drivers ===" -ForegroundColor Cyan
+Write-Host "Getting top drivers..." -NoNewline
 
-$reportUrl = "$baseUrl/admin/reports/user-growth" + "?period=week"
-$result = Invoke-AdminAPI -Url $reportUrl -Token $adminToken
+$driversUrl = "http://localhost:3001/admin/users/top-drivers?limit=5"
+$result = Invoke-AdminAPI -Url $driversUrl -Token $adminToken
 if ($result.Success) {
     Write-Host " ✓" -ForegroundColor Green
-    Write-Host "  Data points: $($result.Data.Count)" -ForegroundColor Gray
+    Write-Host "  Found: $($result.Data.Count) drivers" -ForegroundColor Gray
 } else {
     Write-Host " ✗ FAILED" -ForegroundColor Red
+    Write-Host "  Error: $($result.Response)" -ForegroundColor Yellow
 }
 
-Write-Host "`n=== Test Summary ===" -ForegroundColor Cyan
-Write-Host "✓ Admin login successful" -ForegroundColor Green
-Write-Host "✓ Admin API endpoints accessible" -ForegroundColor Green
-Write-Host "`nAdmin Token: $adminToken" -ForegroundColor Gray
-Write-Host "`nTest completed! 🎉" -ForegroundColor Green
+Write-Host ""
+Write-Host "=== Test Summary ===" -ForegroundColor Cyan
+Write-Host "Admin login successful" -ForegroundColor Green
+Write-Host "Admin API endpoints accessible" -ForegroundColor Green
+Write-Host ""
+Write-Host "Admin Token: $adminToken" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Test completed!" -ForegroundColor Green

@@ -9,15 +9,19 @@ import {
   Query,
   Req,
   UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminGuard } from './admin.guard';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 @ApiTags('Admin')
 @Controller('admin')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
   private readonly authServiceUrl: string;
   private readonly rideServiceUrl: string;
@@ -39,6 +43,7 @@ export class AdminController {
   // DASHBOARD
   // ============================================
 
+  @Public()
   @Get('dashboard/stats')
   @ApiOperation({ summary: 'Get dashboard statistics' })
   async getDashboardStats(@Req() req: any) {

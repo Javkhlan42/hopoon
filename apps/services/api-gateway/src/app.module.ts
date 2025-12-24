@@ -15,6 +15,7 @@ import { AdminController } from './admin/admin.controller';
 import { AdminAuthController } from './admin/admin-auth.controller';
 import { ProxyService } from './proxy/proxy.service';
 import { JwtStrategy } from './auth/jwt.strategy';
+import { AdminGuard } from './admin/admin.guard';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
   providers: [
     ProxyService,
     JwtStrategy,
+    AdminGuard,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

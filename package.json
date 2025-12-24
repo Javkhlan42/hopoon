@@ -31,11 +31,19 @@
     "@nestjs/typeorm": "^10.0.0",
     "@nestjs/websockets": "^10.0.0",
     "@prisma/client": "^5.8.0",
+    "@tanstack/react-query": "^5.90.12",
     "apollo-server-express": "^3.12.0",
+    "axios": "^1.13.2",
     "bcrypt": "^5.1.1",
+<<<<<<< HEAD
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+=======
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
+>>>>>>> d95e9898f52989290d1866029822e85788418468
     "graphql": "^16.8.0",
+    "lucide-react": "^0.562.0",
     "next": "~16.0.1",
     "nodemailer": "^6.9.0",
     "passport": "^0.7.0",
@@ -44,11 +52,16 @@
     "pg": "^8.11.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.6.0",
     "redis": "^4.6.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "socket.io": "^4.6.0",
+<<<<<<< HEAD
+    "tailwind-merge": "^3.4.0",
+=======
     "socket.io-client": "^4.8.3",
+>>>>>>> d95e9898f52989290d1866029822e85788418468
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
@@ -71,6 +84,7 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.3.0",
     "@types/bcrypt": "^5.0.2",
@@ -84,6 +98,7 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "autoprefixer": "^10.4.23",
     "babel-jest": "^30.0.2",
     "eslint": "^9.8.0",
     "eslint-config-next": "^16.0.1",
@@ -97,9 +112,14 @@
     "jest-environment-jsdom": "^30.0.2",
     "jest-util": "^30.0.2",
     "nx": "22.3.3",
+    "postcss": "^8.5.6",
     "prettier": "~3.6.2",
     "prisma": "^5.8.0",
+<<<<<<< HEAD
+    "tailwindcss": "^4.1.18",
+=======
     "supertest": "^7.1.4",
+>>>>>>> d95e9898f52989290d1866029822e85788418468
     "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",

@@ -8,6 +8,7 @@ import { RidesService } from './rides/rides.service';
 import { Ride } from './rides/ride.entity';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { AdminController } from './admin/admin.controller';
+import { AdminGuard } from './admin/admin.guard';
 
 @Module({
   imports: [
@@ -34,6 +35,6 @@ import { AdminController } from './admin/admin.controller';
     }),
   ],
   controllers: [RidesController, AdminController],
-  providers: [RidesService, JwtStrategy],
+  providers: [RidesService, JwtStrategy, AdminGuard],
 })
 export class AppModule {}
