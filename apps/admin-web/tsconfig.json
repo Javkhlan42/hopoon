@@ -11,6 +11,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "lib": ["es2022", "dom"],
     "plugins": [
       {
         "name": "next"
@@ -18,6 +21,6 @@
     ],
     "types": ["node"]
   },
-  "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../hop-on/src/app/App.tsx"],
   "exclude": ["node_modules"]
 }
