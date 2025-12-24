@@ -35,13 +35,10 @@
     "apollo-server-express": "^3.12.0",
     "axios": "^1.13.2",
     "bcrypt": "^5.1.1",
-<<<<<<< HEAD
-    "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
-=======
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
->>>>>>> d95e9898f52989290d1866029822e85788418468
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "graphql": "^16.8.0",
     "lucide-react": "^0.562.0",
     "next": "~16.0.1",
@@ -57,11 +54,8 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "socket.io": "^4.6.0",
-<<<<<<< HEAD
-    "tailwind-merge": "^3.4.0",
-=======
     "socket.io-client": "^4.8.3",
->>>>>>> d95e9898f52989290d1866029822e85788418468
+    "tailwind-merge": "^3.4.0",
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
@@ -115,11 +109,8 @@
     "postcss": "^8.5.6",
     "prettier": "~3.6.2",
     "prisma": "^5.8.0",
-<<<<<<< HEAD
-    "tailwindcss": "^4.1.18",
-=======
     "supertest": "^7.1.4",
->>>>>>> d95e9898f52989290d1866029822e85788418468
+    "tailwindcss": "^4.1.18",
     "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",

@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig, AxiosError } from 'axios';
 import { Request, Response } from 'express';
 
 @Injectable()
 export class ProxyService {
+  private readonly logger = new Logger(ProxyService.name);
+
   constructor(private httpService: HttpService) {}
 
   async proxy(
@@ -61,12 +63,51 @@ export class ProxyService {
       const response = await firstValueFrom(this.httpService.request(config));
       res.status(response.status).json(response.data);
     } catch (error) {
+      this.logger.error(
+        `[Proxy Error] ${req.method} ${req.url} -> ${url}`,
+        error,
+      );
+
       if (error.response) {
-        res.status(error.response.status).json(error.response.data);
+        // Forward the exact error from the backend service
+        const status = error.response.status || 500;
+        const errorData = error.response.data || {};
+
+        res.status(status).json({
+          success: false,
+          statusCode: status,
+          timestamp: new Date().toISOString(),
+          path: req.url,
+          method: req.method,
+          error: errorData.error || errorData.message || 'Service Error',
+          message:
+            errorData.message ||
+            errorData.error ||
+            'An error occurred in the service',
+          details: errorData.details || errorData,
+        });
+      } else if (error.request) {
+        // Request was made but no response received (service is down)
+        res.status(503).json({
+          success: false,
+          statusCode: 503,
+          timestamp: new Date().toISOString(),
+          path: req.url,
+          method: req.method,
+          error: 'Service Unavailable',
+          message: `Unable to connect to service at ${serviceUrl}`,
+        });
       } else {
-        res
-          .status(500)
-          .json({ message: 'Internal server error', error: error.message });
+        // Something else happened
+        res.status(500).json({
+          success: false,
+          statusCode: 500,
+          timestamp: new Date().toISOString(),
+          path: req.url,
+          method: req.method,
+          error: 'Gateway Error',
+          message: error.message || 'Internal server error',
+        });
       }
     }
   }
@@ -101,10 +142,60 @@ export class ProxyService {
       const response = await firstValueFrom(this.httpService.request(config));
       return response.data;
     } catch (error) {
-      if (error.response) {
-        throw error.response.data;
-      }
-      throw error;
+      this.handleProxyError(error, url, method);
+    }
+  }
+
+  private handleProxyError(error: any, url: string, method: string): never {
+    if (error.response) {
+      const axiosError = error as AxiosError;
+      const status =
+        axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const data: any = axiosError.response?.data || {};
+
+      this.logger.error(
+        `[Proxy Error] ${method} ${url} - Status: ${status} - ${JSON.stringify(data)}`,
+      );
+
+      // Forward the exact error from the backend service
+      throw new HttpException(
+        {
+          success: false,
+          statusCode: status,
+          timestamp: new Date().toISOString(),
+          error: data.error || data.message || 'Service Error',
+          message:
+            data.message || data.error || 'An error occurred in the service',
+          details: data.details || data,
+        },
+        status,
+      );
+    } else if (error.request) {
+      // Request was made but no response received (service is down)
+      this.logger.error(`[Proxy Error] ${method} ${url} - Service unavailable`);
+      throw new HttpException(
+        {
+          success: false,
+          statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+          timestamp: new Date().toISOString(),
+          error: 'Service Unavailable',
+          message: `Unable to connect to service at ${url}`,
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    } else {
+      // Something else happened
+      this.logger.error(`[Proxy Error] ${method} ${url} - ${error.message}`);
+      throw new HttpException(
+        {
+          success: false,
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          timestamp: new Date().toISOString(),
+          error: 'Gateway Error',
+          message: error.message || 'An unexpected error occurred',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
