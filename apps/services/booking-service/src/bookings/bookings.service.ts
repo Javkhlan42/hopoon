@@ -134,10 +134,15 @@ export class BookingsService {
         const response = await firstValueFrom(
           this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
         );
-        if (response.data.driverId !== userId) {
+        const ride = response.data;
+        const driverId = ride.driver_id || ride.driverId;
+        if (driverId !== userId) {
           throw new ForbiddenException('Access denied');
         }
       } catch (error) {
+        if (error instanceof ForbiddenException) {
+          throw error;
+        }
         throw new ForbiddenException('Access denied');
       }
     }
@@ -159,11 +164,16 @@ export class BookingsService {
       const response = await firstValueFrom(
         this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
       );
-      if (response.data.driverId !== driverId) {
+      const ride = response.data;
+      const rideDriverId = ride.driver_id || ride.driverId;
+      if (rideDriverId !== driverId) {
         throw new ForbiddenException('Only the driver can approve bookings');
       }
     } catch (error) {
-      throw new ForbiddenException('Access denied');
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to verify ride ownership');
     }
 
     if (booking.status !== BookingStatus.PENDING) {
@@ -198,11 +208,16 @@ export class BookingsService {
       const response = await firstValueFrom(
         this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
       );
-      if (response.data.driverId !== driverId) {
+      const ride = response.data;
+      const rideDriverId = ride.driver_id || ride.driverId;
+      if (rideDriverId !== driverId) {
         throw new ForbiddenException('Only the driver can reject bookings');
       }
     } catch (error) {
-      throw new ForbiddenException('Access denied');
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to verify ride ownership');
     }
 
     if (booking.status !== BookingStatus.PENDING) {
