@@ -1,6 +1,6 @@
 {
-  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "types": ["node"],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -12,7 +12,15 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true,
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
