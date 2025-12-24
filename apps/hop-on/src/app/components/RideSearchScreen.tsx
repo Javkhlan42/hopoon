@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Calendar, ArrowRight, Users2, Clock, Star, ChevronDown, User, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -11,6 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import api from '../../lib/api';
+import { toast } from 'sonner';
 
 interface RideSearchScreenProps {
   onBack: () => void;
@@ -108,10 +110,72 @@ export function RideSearchScreen({ onBack, onJoinRide, onChat }: RideSearchScree
   const [priceRange, setPriceRange] = useState([0, 50000]);
   const [timeFilter, setTimeFilter] = useState<string | null>(null);
   const [filteredRides, setFilteredRides] = useState(mockRides);
+  const [rides, setRides] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useState<any>(null);
+
+  // API ашиглан зорчилт хайх
+  const searchRides = async () => {
+    // Coordinates - жишээ нь Улаанбаатар -> Дархан
+    // TODO: Geocoding API ашиглан хаягаас coordinate олох
+    const originLat = 47.9184;
+    const originLng = 106.9177;
+    const destinationLat = 49.4871;
+    const destinationLng = 105.9057;
+
+    setLoading(true);
+    try {
+      const response = await api.rides.search({
+        originLat,
+        originLng,
+        destinationLat,
+        destinationLng,
+        seats: parseInt(passengers),
+        page: 1,
+        limit: 20,
+      });
+
+      if (response.success && response.data) {
+        const formattedRides = response.data.rides.map((ride: any) => ({
+          id: ride.id,
+          driverName: ride.driver?.name || 'Unknown',
+          driverPhoto: 'https://images.unsplash.com/photo-1758525747638-25563afc9ff5?w=200',
+          driverRating: ride.driver?.rating || 4.5,
+          verified: ride.driver?.verified || false,
+          from: ride.origin.address || from,
+          to: ride.destination.address || to,
+          departureTime: new Date(ride.departureTime).toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' }),
+          arrivalTime: '',
+          duration: '',
+          price: ride.pricePerSeat,
+          seatsAvailable: ride.availableSeats,
+          totalSeats: ride.availableSeats + (ride.bookings?.length || 0),
+          popular: false,
+        }));
+        setRides(formattedRides);
+        setFilteredRides(formattedRides);
+        toast.success(`${formattedRides.length} зорчилт олдлоо`);
+      }
+    } catch (error: any) {
+      console.error('Search error:', error);
+      toast.error('Зорчилт хайхад алдаа гарлаа');
+      setFilteredRides(mockRides);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Component ачаалагдахад болон search параметер өөрчлөгдөхөд хайх
+  useEffect(() => {
+    if (from && to) {
+      searchRides();
+    }
+  }, []); // Анх удаа л 1 удаа хайх
 
   // Filter rides based on price and time
   const applyFilters = () => {
-    let filtered = mockRides.filter(ride => 
+    const dataSource = rides.length > 0 ? rides : mockRides;
+    let filtered = dataSource.filter(ride => 
       ride.price >= priceRange[0] && ride.price <= priceRange[1]
     );
 

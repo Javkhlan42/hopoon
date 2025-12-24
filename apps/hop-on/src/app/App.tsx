@@ -8,9 +8,10 @@ import { RideFeedScreen } from './components/RideFeedScreen';
 import { RideSearchScreen } from './components/RideSearchScreen';
 import { CreateRideScreen } from './components/CreateRideScreen';
 import { ProfileScreen } from './components/ProfileScreen';
-import { ChatScreen } from './components/ChatScreen';
 import { BookingScreen } from './components/BookingScreen';
 import { LiveTrackingScreen } from './components/LiveTrackingScreen';
+import ChatScreen from '@/components/ChatScreen';
+import { SocketProvider } from '@/context/SocketContext';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -30,8 +31,18 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [userRole, setUserRole] = useState<'driver' | 'passenger'>('passenger');
   const [selectedRideId, setSelectedRideId] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentUserName, setCurrentUserName] = useState<string>('');
 
   const handleAuth = () => {
+    // Get user info from localStorage (set during login)
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      // TODO: Decode JWT to get user ID and name
+      // For now, use mock data
+      setCurrentUserId('user-1');
+      setCurrentUserName('Батаа');
+    }
     setCurrentScreen('onboarding');
     toast.success('OTP verified successfully!');
   };
@@ -62,6 +73,10 @@ export default function App() {
     setCurrentScreen('chat');
   };
 
+  const handleChatBack = () => {
+    setCurrentScreen('feed');
+  };
+
   const handleStartTracking = () => {
     setCurrentScreen('tracking');
     toast.success('Trip started! Tracking is now active.');
@@ -75,76 +90,79 @@ export default function App() {
 
   return (
     <>
-      {currentScreen === 'home' && (
-        <HomeScreen 
-          onSignIn={() => setCurrentScreen('auth')}
-          onSignUp={() => setCurrentScreen('onboarding')}
-          onSearch={() => setCurrentScreen('search')}
-        />
-      )}
+      <SocketProvider userId={currentUserId}>
+        {currentScreen === 'home' && (
+          <HomeScreen 
+            onSignIn={() => setCurrentScreen('auth')}
+            onSignUp={() => setCurrentScreen('onboarding')}
+            onSearch={() => setCurrentScreen('search')}
+          />
+        )}
 
-      {currentScreen === 'auth' && (
-        <AuthScreen onAuth={handleAuth} />
-      )}
+        {currentScreen === 'auth' && (
+          <AuthScreen onAuth={handleAuth} />
+        )}
 
-      {currentScreen === 'onboarding' && (
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
-      )}
+        {currentScreen === 'onboarding' && (
+          <OnboardingScreen onComplete={handleOnboardingComplete} />
+        )}
 
-      {currentScreen === 'feed' && (
-        <RideFeedScreen
-          userRole={userRole}
-          onCreateRide={() => setCurrentScreen('create')}
-          onSearchRide={() => setCurrentScreen('search')}
-          onJoinRide={handleJoinRide}
-          onChat={handleChat}
-          onProfile={() => setCurrentScreen('profile')}
-          onStartTracking={handleStartTracking}
-        />
-      )}
+        {currentScreen === 'feed' && (
+          <RideFeedScreen
+            userRole={userRole}
+            onCreateRide={() => setCurrentScreen('create')}
+            onSearchRide={() => setCurrentScreen('search')}
+            onJoinRide={handleJoinRide}
+            onChat={handleChat}
+            onProfile={() => setCurrentScreen('profile')}
+            onStartTracking={handleStartTracking}
+          />
+        )}
 
-      {currentScreen === 'search' && (
-        <RideSearchScreen
-          onBack={() => setCurrentScreen('feed')}
-          onJoinRide={handleJoinRide}
-          onChat={handleChat}
-        />
-      )}
+        {currentScreen === 'search' && (
+          <RideSearchScreen
+            onBack={() => setCurrentScreen('feed')}
+            onJoinRide={handleJoinRide}
+            onChat={handleChat}
+          />
+        )}
 
-      {currentScreen === 'create' && (
-        <CreateRideScreen
-          onBack={() => setCurrentScreen('feed')}
-          onCreateRide={handleCreateRide}
-        />
-      )}
+        {currentScreen === 'create' && (
+          <CreateRideScreen
+            onBack={() => setCurrentScreen('feed')}
+            onCreateRide={handleCreateRide}
+          />
+        )}
 
-      {currentScreen === 'profile' && (
-        <ProfileScreen onBack={() => setCurrentScreen('feed')} />
-      )}
+        {currentScreen === 'profile' && (
+          <ProfileScreen onBack={() => setCurrentScreen('feed')} />
+        )}
 
-      {currentScreen === 'chat' && (
-        <ChatScreen
-          onBack={() => setCurrentScreen('feed')}
-          recipientName="Batmunkh"
-          recipientPhoto="https://images.unsplash.com/photo-1758525747638-25563afc9ff5?w=200"
-        />
-      )}
+        {currentScreen === 'chat' && (
+          <ChatScreen
+            currentUserId={currentUserId}
+            currentUserName={currentUserName}
+            onBack={handleChatBack}
+          />
+        )}
 
-      {currentScreen === 'booking' && (
-        <BookingScreen
-          onBack={() => setCurrentScreen('feed')}
-          onConfirm={handleBookingConfirm}
-        />
-      )}
+        {currentScreen === 'booking' && (
+          <BookingScreen
+            onBack={() => setCurrentScreen('feed')}
+            onConfirm={handleBookingConfirm}
+            rideId={selectedRideId}
+          />
+        )}
 
-      {currentScreen === 'tracking' && (
-        <LiveTrackingScreen
-          onBack={() => setCurrentScreen('feed')}
-          onSOS={handleSOS}
-        />
-      )}
+        {currentScreen === 'tracking' && (
+          <LiveTrackingScreen
+            onBack={() => setCurrentScreen('feed')}
+            onSOS={handleSOS}
+          />
+        )}
 
-      <Toaster position="top-center" richColors />
+        <Toaster position="top-center" richColors />
+      </SocketProvider>
     </>
   );
 }

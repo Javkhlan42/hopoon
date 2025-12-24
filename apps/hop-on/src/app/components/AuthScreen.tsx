@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import {  ShieldCheck, ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
@@ -5,25 +7,72 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from './ui/input-otp';
+import { apiClient } from '../../lib/api';
+import { toast } from 'sonner';
 
 interface AuthScreenProps {
   onAuth: () => void;
 }
 
 export function AuthScreen({ onAuth }: AuthScreenProps) {
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [step, setStep] = useState<'register' | 'login' | 'otp'>('login');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSendOTP = () => {
-    if (phone) {
-      setStep('otp');
+  const handleRegister = async () => {
+    if (!phone || !password || !name) {
+      toast.error('Утасны дугаар, нууц үг болон нэрээ оруулна уу');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiClient.auth.register({
+        phone,
+        password,
+        name,
+        ...(email && { email }),
+      });
+
+      // Save tokens
+      if (response.data?.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+        toast.success('Амжилттай бүртгэгдлээ!');
+        onAuth();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Бүртгэл амжилтгүй боллоо');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerifyOTP = () => {
-    if (otp.length === 6) {
-      onAuth();
+  const handleLogin = async () => {
+    if (!phone || !password) {
+      toast.error('Утасны дугаар болон нууц үгээ оруулна уу');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiClient.auth.login(phone, password);
+
+      // Save tokens
+      if (response.data?.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+        toast.success('Амжилттай нэвтэрлээ!');
+        onAuth();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Нэвтрэлт амжилтгүй боллоо');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,35 +95,117 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
         <Card className="border-2 border-gray-200 shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">
-              {step === 'phone' ? 'Welcome!' : 'Verify your number'}
+              {step === 'register' ? 'Бүртгүүлэх' : step === 'login' ? 'Нэвтрэх' : 'Баталгаажуулах'}
             </CardTitle>
             <CardDescription className="text-base">
-              {step === 'phone' 
-                ? 'Enter your phone number to get started' 
-                : `We sent a code to ${phone}`}
+              {step === 'register' 
+                ? 'Шинэ хэрэглэгч үүсгэх' 
+                : step === 'login'
+                ? 'Өөрийн бүртгэлээр нэвтрэх'
+                : `Код илгээсэн: ${phone}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {step === 'phone' ? (
+            {step === 'register' ? (
               <>
                 <div className="space-y-3">
-                  <Label htmlFor="phone" className="text-base">Phone Number</Label>
+                  <Label htmlFor="name" className="text-base">Нэр</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Таны нэр"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-14 text-base border-gray-300"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="phone" className="text-base">Утасны дугаар</Label>
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+976 9999 9999"
+                    placeholder="+97699887766"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="h-14 text-base border-gray-300"
                   />
                 </div>
+                <div className="space-y-3">
+                  <Label htmlFor="email" className="text-base">И-мэйл (заавал биш)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="example@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-14 text-base border-gray-300"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="password" className="text-base">Нууц үг</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Нууц үгээ оруулна уу"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-14 text-base border-gray-300"
+                  />
+                </div>
                 <Button 
-                  onClick={handleSendOTP}
+                  onClick={handleRegister}
                   className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-full text-lg"
-                  disabled={!phone}
+                  disabled={!phone || !password || !name || loading}
                 >
-                  Continue
+                  {loading ? 'Уншиж байна...' : 'Бүртгүүлэх'}
                   <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <Button 
+                  onClick={() => setStep('login')}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Бүртгэлтэй юу? Нэвтрэх
+                </Button>
+              </>
+            ) : step === 'login' ? (
+              <>
+                <div className="space-y-3">
+                  <Label htmlFor="phone-login" className="text-base">Утасны дугаар</Label>
+                  <Input
+                    id="phone-login"
+                    type="tel"
+                    placeholder="+97699887766"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="h-14 text-base border-gray-300"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="password-login" className="text-base">Нууц үг</Label>
+                  <Input
+                    id="password-login"
+                    type="password"
+                    placeholder="Нууц үгээ оруулна уу"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-14 text-base border-gray-300"
+                  />
+                </div>
+                <Button 
+                  onClick={handleLogin}
+                  className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-full text-lg"
+                  disabled={!phone || !password || loading}
+                >
+                  {loading ? 'Уншиж байна...' : 'Нэвтрэх'}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <Button 
+                  onClick={() => setStep('register')}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Шинэ хэрэглэгч үү? Бүртгүүлэх
                 </Button>
               </>
             ) : (
@@ -95,19 +226,19 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
                   </div>
                 </div>
                 <Button 
-                  onClick={handleVerifyOTP}
+                  onClick={onAuth}
                   className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-full text-lg"
                   disabled={otp.length !== 6}
                 >
-                  Verify & Continue
+                  Баталгаажуулах
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button 
-                  onClick={() => setStep('phone')}
+                  onClick={() => setStep('register')}
                   variant="ghost"
                   className="w-full"
                 >
-                  Change phone number
+                  Буцах
                 </Button>
               </>
             )}
