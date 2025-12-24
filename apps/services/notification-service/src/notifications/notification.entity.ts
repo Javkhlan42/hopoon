@@ -39,7 +39,7 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
+  @Column('uuid', { name: 'user_id' })
   userId: string;
 
   @Column({
@@ -70,18 +70,18 @@ export class Notification {
   @Column('jsonb', { nullable: true })
   data?: any;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, name: 'sent_at' })
   sentAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, name: 'read_at' })
   readAt?: Date;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: true, name: 'failure_reason' })
   failureReason?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

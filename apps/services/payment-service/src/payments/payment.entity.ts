@@ -31,10 +31,10 @@ export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
+  @Column('uuid', { name: 'user_id' })
   userId: string;
 
-  @Column('uuid', { nullable: true })
+  @Column('uuid', { nullable: true, name: 'booking_id' })
   bookingId?: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
@@ -65,15 +65,15 @@ export class Payment {
   @Column('jsonb', { nullable: true })
   metadata?: any;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: true, name: 'transaction_id' })
   transactionId?: string;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: true, name: 'failure_reason' })
   failureReason?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

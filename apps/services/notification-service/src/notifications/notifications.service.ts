@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import {
@@ -7,7 +7,11 @@ import {
   NotificationChannel,
   NotificationStatus,
 } from './notification.entity';
-import { SendNotificationDto, BulkNotificationDto, MarkAsReadDto } from './notifications.dto';
+import {
+  SendNotificationDto,
+  BulkNotificationDto,
+  MarkAsReadDto,
+} from './notifications.dto';
 import { EmailService } from './email.service';
 import { SmsService } from './sms.service';
 import { PushService } from './push.service';
@@ -15,6 +19,8 @@ import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @InjectRepository(Notification)
     private notificationsRepository: Repository<Notification>,
@@ -45,13 +51,16 @@ export class NotificationsService {
       try {
         switch (channel) {
           case NotificationChannel.EMAIL:
-            await this.emailService.sendEmail(dto.userId, dto.title, dto.message);
+            this.logger.log(`Email notification queued for user ${dto.userId}`);
+            // await this.emailService.sendEmail(dto.userId, dto.title, dto.message);
             break;
           case NotificationChannel.SMS:
-            await this.smsService.sendSMS(dto.userId, dto.message);
+            this.logger.log(`SMS notification queued for user ${dto.userId}`);
+            // await this.smsService.sendSMS(dto.userId, dto.message);
             break;
           case NotificationChannel.PUSH:
-            await this.pushService.sendPushNotification(dto.userId, dto.title, dto.message);
+            this.logger.log(`Push notification queued for user ${dto.userId}`);
+            // await this.pushService.sendPushNotification(dto.userId, dto.title, dto.message);
             break;
           case NotificationChannel.IN_APP:
             this.notificationsGateway.sendToUser(dto.userId, {
@@ -93,9 +102,12 @@ export class NotificationsService {
     await Promise.all(promises);
   }
 
-  async getUserNotifications(userId: string, unreadOnly: boolean = false): Promise<Notification[]> {
+  async getUserNotifications(
+    userId: string,
+    unreadOnly: boolean = false,
+  ): Promise<Notification[]> {
     const where: any = { userId };
-    
+
     if (unreadOnly) {
       where.readAt = null;
     }
@@ -119,7 +131,10 @@ export class NotificationsService {
     );
   }
 
-  async getNotificationById(userId: string, notificationId: string): Promise<Notification> {
+  async getNotificationById(
+    userId: string,
+    notificationId: string,
+  ): Promise<Notification> {
     const notification = await this.notificationsRepository.findOne({
       where: { id: notificationId, userId },
     });

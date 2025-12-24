@@ -1,7 +1,27 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+  SetMetadata,
+} from '@nestjs/common';
 import { RidesService } from './rides.service';
-import { CreateRideDto, UpdateRideDto, SearchRidesDto, RideQueryDto } from './rides.dto';
+import {
+  CreateRideDto,
+  UpdateRideDto,
+  SearchRidesDto,
+  RideQueryDto,
+} from './rides.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 @Controller('rides')
 @UseGuards(JwtAuthGuard)
@@ -13,23 +33,30 @@ export class RidesController {
     return this.ridesService.create(createRideDto, req.user.userId);
   }
 
+  @Public()
   @Get()
   async findAll(@Query() query: RideQueryDto) {
     return this.ridesService.findAll(query);
   }
 
+  @Public()
   @Get('search')
   async search(@Query() searchDto: SearchRidesDto) {
     return this.ridesService.search(searchDto);
   }
 
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.ridesService.findOne(id);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateRideDto: UpdateRideDto, @Request() req) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateRideDto: UpdateRideDto,
+    @Request() req,
+  ) {
     return this.ridesService.update(id, updateRideDto, req.user.userId);
   }
 
@@ -49,7 +76,10 @@ export class RidesController {
   }
 
   @Patch(':id/seats')
-  async updateSeats(@Param('id') id: string, @Body() body: { seatsChange: number }) {
+  async updateSeats(
+    @Param('id') id: string,
+    @Body() body: { seatsChange: number },
+  ) {
     return this.ridesService.updateAvailableSeats(id, body.seatsChange);
   }
 }

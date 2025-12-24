@@ -1,9 +1,9 @@
-# HopOn API Documentation
+# tHopOn API Documentation
 
-**Version:** 1.0  
-**Base URL:** `https://api.hopon.mn/v1`  
-**Protocol:** HTTPS  
-**Authentication:** JWT Bearer Token  
+**Version:** 1.0
+**Base URL:** `https://api.hopon.mn/v1`
+**Protocol:** HTTPS
+**Authentication:** JWT Bearer Token
 **Date:** December 20, 2025
 
 ---
@@ -15,13 +15,13 @@
 3. [Common Patterns](#common-patterns)
 4. [Error Handling](#error-handling)
 5. [API Endpoints](#api-endpoints)
-   - [Authentication & Users](#authentication--users)
-   - [Rides & Feed](#rides--feed)
+   - [Authentication &amp; Users](#authentication--users)
+   - [Rides &amp; Feed](#rides--feed)
    - [Bookings](#bookings)
    - [Communication](#communication)
    - [Payments](#payments)
-   - [Ratings & Reviews](#ratings--reviews)
-   - [Safety & Reports](#safety--reports)
+   - [Ratings &amp; Reviews](#ratings--reviews)
+   - [Safety &amp; Reports](#safety--reports)
    - [Admin](#admin)
 6. [WebSocket Events](#websocket-events)
 7. [Rate Limiting](#rate-limiting)
@@ -38,7 +38,8 @@ The HopOn API provides a RESTful interface for the carpooling platform. All endp
 - `PUT` - Update existing resources
 - `PATCH` - Partial update of resources
 - `DELETE` - Remove resources
-update
+  update
+
 ---
 
 ## Authentication
@@ -2185,6 +2186,6 @@ npm install @hopon/react-native-sdk
 
 ---
 
-**Last Updated:** December 20, 2025  
-**API Version:** 1.0  
+**Last Updated:** December 20, 2025
+**API Version:** 1.0
 **Documentation Version:** 1.0
