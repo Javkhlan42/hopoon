@@ -113,13 +113,42 @@ export class BookingsService {
       .skip((page - 1) * limit)
       .take(limit);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    const [bookings, total] = await queryBuilder.getManyAndCount();
 
-    return { data, total };
+    // Fetch ride and driver details for each booking
+    const enrichedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        try {
+          // Fetch ride details
+          const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+          const rideResponse = await firstValueFrom(
+            this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
+          );
+          
+          const rideData = rideResponse.data?.data || rideResponse.data;
+          
+          return {
+            ...booking,
+            ride: rideData,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch ride ${booking.ride_id}:`, error);
+          return booking;
+        }
+      }),
+    );
+
+    return { data: enrichedBookings, total };
   }
 
   async findOne(id: string, userId: string): Promise<Booking> {
-    const booking = await this.bookingsRepository.findOne({ where: { id } });
+    let booking;
+    try {
+      booking = await this.bookingsRepository.findOne({ where: { id } });
+    } catch (error) {
+      // Invalid UUID format or database error
+      throw new NotFoundException('Booking not found');
+    }
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -151,7 +180,12 @@ export class BookingsService {
   }
 
   async approve(id: string, driverId: string): Promise<Booking> {
-    const booking = await this.bookingsRepository.findOne({ where: { id } });
+    let booking;
+    try {
+      booking = await this.bookingsRepository.findOne({ where: { id } });
+    } catch (error) {
+      throw new NotFoundException('Booking not found');
+    }
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -195,7 +229,12 @@ export class BookingsService {
     driverId: string,
     reason?: string,
   ): Promise<Booking> {
-    const booking = await this.bookingsRepository.findOne({ where: { id } });
+    let booking;
+    try {
+      booking = await this.bookingsRepository.findOne({ where: { id } });
+    } catch (error) {
+      throw new NotFoundException('Booking not found');
+    }
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -233,7 +272,12 @@ export class BookingsService {
   }
 
   async cancel(id: string, userId: string): Promise<Booking> {
-    const booking = await this.bookingsRepository.findOne({ where: { id } });
+    let booking;
+    try {
+      booking = await this.bookingsRepository.findOne({ where: { id } });
+    } catch (error) {
+      throw new NotFoundException('Booking not found');
+    }
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -293,12 +337,20 @@ export class BookingsService {
       const response = await firstValueFrom(
         this.httpService.get(`${rideServiceUrl}/rides?driverId=${driverId}`),
       );
-      rideIds = response.data.map((ride: any) => ride.id);
+      
+      // Handle different response formats from ride-service
+      const ridesData = response.data?.data || response.data;
+      const rides = Array.isArray(ridesData) ? ridesData : [];
+      
+      rideIds = rides.map((ride: any) => ride.id);
+      console.log(`Found ${rideIds.length} rides for driver ${driverId}`);
     } catch (error) {
+      console.error('Failed to fetch driver rides:', error);
       return { data: [], total: 0 };
     }
 
     if (rideIds.length === 0) {
+      console.log('No rides found for driver, returning empty bookings');
       return { data: [], total: 0 };
     }
 
@@ -316,6 +368,8 @@ export class BookingsService {
       .take(limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
+    
+    console.log(`Found ${total} bookings for driver's rides`);
 
     return { data, total };
   }

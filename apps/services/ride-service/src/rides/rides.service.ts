@@ -77,7 +77,12 @@ export class RidesService {
   }
 
   async findOne(id: string): Promise<Ride> {
-    const ride = await this.ridesRepository.findOne({ where: { id } });
+    let ride;
+    try {
+      ride = await this.ridesRepository.findOne({ where: { id } });
+    } catch (error) {
+      throw new NotFoundException('Ride not found');
+    }
 
     if (!ride) {
       throw new NotFoundException('Ride not found');

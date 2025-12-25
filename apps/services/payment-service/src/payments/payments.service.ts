@@ -92,9 +92,14 @@ export class PaymentsService {
   }
 
   async refundPayment(userId: string, dto: RefundPaymentDto): Promise<Payment> {
-    const payment = await this.paymentsRepository.findOne({
-      where: { id: dto.paymentId, userId },
-    });
+    let payment;
+    try {
+      payment = await this.paymentsRepository.findOne({
+        where: { id: dto.paymentId, userId },
+      });
+    } catch (error) {
+      throw new NotFoundException('Payment not found');
+    }
 
     if (!payment) {
       throw new NotFoundException('Payment not found');

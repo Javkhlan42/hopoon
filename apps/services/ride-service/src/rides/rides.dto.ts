@@ -107,46 +107,63 @@ export class UpdateRideDto {
 }
 
 export class SearchRidesDto {
+  @ApiProperty({ example: 47.9184, description: 'Origin latitude' })
+  @Type(() => Number)
   @IsNumber()
   @Min(-90)
   @Max(90)
   originLat: number;
 
+  @ApiProperty({ example: 106.9177, description: 'Origin longitude' })
+  @Type(() => Number)
   @IsNumber()
   @Min(-180)
   @Max(180)
   originLng: number;
 
+  @ApiProperty({ example: 49.4871, description: 'Destination latitude' })
+  @Type(() => Number)
   @IsNumber()
   @Min(-90)
   @Max(90)
   destinationLat: number;
 
+  @ApiProperty({ example: 105.9057, description: 'Destination longitude' })
+  @Type(() => Number)
   @IsNumber()
   @Min(-180)
   @Max(180)
   destinationLng: number;
 
+  @ApiPropertyOptional({ example: '2024-12-25', description: 'Departure date' })
   @IsOptional()
   @IsDateString()
   departureDate?: string;
 
+  @ApiPropertyOptional({ example: 2, description: 'Minimum seats required' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   seats?: number;
 
+  @ApiPropertyOptional({ example: 10, description: 'Search radius in km' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   maxRadius?: number = 5; // km
 
+  @ApiPropertyOptional({ example: 1, description: 'Page number' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ example: 20, description: 'Items per page' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
@@ -154,20 +171,29 @@ export class SearchRidesDto {
 }
 
 export class RideQueryDto {
+  @ApiPropertyOptional({
+    enum: RideStatus,
+    description: 'Filter by ride status',
+  })
   @IsOptional()
   @IsEnum(RideStatus)
   status?: RideStatus;
 
+  @ApiPropertyOptional({ description: 'Filter by driver ID' })
   @IsOptional()
   @IsString()
   driverId?: string;
 
+  @ApiPropertyOptional({ example: 1, description: 'Page number' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ example: 20, description: 'Items per page' })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
