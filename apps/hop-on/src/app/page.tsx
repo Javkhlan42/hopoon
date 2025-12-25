@@ -3,65 +3,30 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { BottomNav } from '../components/BottomNav';
-import { Card, CardContent } from '../components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import {
-  Clock,
-  Users,
-  Filter,
-  Heart,
-  MessageCircle,
-  Car,
+  MapPin,
   Calendar,
+  Users,
+  Shield,
+  User as UserIcon,
+  Leaf,
+  Search,
+  Car,
+  MessageSquare,
 } from 'lucide-react';
-import apiClient from '../lib/api';
-import type { Ride } from '../types';
-import { formatCurrency, formatTime } from '../lib/utils';
-import { RideMiniMap } from '../components/RideMiniMap';
-
-// Helper function to extract array from various API response formats
-function extractArray<T>(response: unknown, key: string): T[] {
-  if (Array.isArray(response)) {
-    return response as T[];
-  }
-
-  const data = response as Record<string, unknown>;
-
-  if (data && typeof data === 'object') {
-    // Check if there's a 'data' property that is an array (common format: {data: [...], total: number})
-    if ('data' in data && Array.isArray(data.data)) {
-      return data.data as T[];
-    }
-    // Check if the key exists and is an array
-    if (key in data && Array.isArray(data[key])) {
-      return data[key] as T[];
-    }
-    // Check nested data.key format
-    if ('data' in data) {
-      const nestedData = data.data as Record<string, unknown>;
-      if (
-        nestedData &&
-        typeof nestedData === 'object' &&
-        key in nestedData &&
-        Array.isArray(nestedData[key])
-      ) {
-        return nestedData[key] as T[];
-      }
-    }
-  }
-
-  return [];
-}
+import { useDialog } from '../components/DialogProvider';
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [rides, setRides] = useState<Ride[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState('Бүгд');
+  const { showAlert } = useDialog();
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [date, setDate] = useState('');
+  const [passengers, setPassengers] = useState('1');
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -69,52 +34,14 @@ export default function HomePage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchRides();
+  const handleSearch = () => {
+    if (!origin || !destination) {
+      showAlert('Хаанаас болон хаашаа хоёрыг оруулна уу');
+      return;
     }
-  }, [isAuthenticated]);
-
-  const fetchRides = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.rides.list({
-        status: 'active',
-        limit: 20,
-      });
-      console.log('Rides API Response:', response);
-      const data = response.data || response;
-      console.log('Data extracted:', data);
-
-      const ridesData = extractArray<Ride>(data, 'data');
-      console.log('Rides array:', ridesData);
-      console.log('Setting rides state with', ridesData.length, 'items');
-      setRides(ridesData);
-    } catch (error) {
-      console.error('Failed to fetch rides:', error);
-      setRides([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleJoinRide = async (rideId: string) => {
-    try {
-      await apiClient.bookings.create({ rideId, seats: 1 });
-      alert('Суудал захиалга амжилттай илгээгдлээ!');
-      fetchRides();
-    } catch (error: unknown) {
-      const errorMessage = (error as Error).message || 'Алдаа гарлаа';
-
-      // User-friendly error messages
-      if (errorMessage.includes('already have a pending booking')) {
-        alert('Та энэ аялалд аль хэдийн захиалга үүсгэсэн байна');
-      } else if (errorMessage.includes('not enough seats')) {
-        alert('Суудал дүүрсэн байна');
-      } else {
-        alert(errorMessage);
-      }
-    }
+    router.push(
+      `/search?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&date=${date}&passengers=${passengers}`,
+    );
   };
 
   if (isLoading || !isAuthenticated) {
@@ -125,197 +52,193 @@ export default function HomePage() {
     );
   }
 
-  const filters = ['Бүгд', 'УБ', 'Дархан', 'Эрдэнэт'];
-
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-40 px-4 py-3">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold">Аялалын Пост</h1>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <Filter className="w-5 h-5" />
-              <span className="sr-only">Шүүх</span>
-            </button>
-            {user?.role === 'driver' && (
-              <Button
-                onClick={() => router.push('/create')}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 h-9"
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Car className="w-6 h-6 text-cyan-500" />
+              <span className="text-xl font-bold text-cyan-500">HopOn</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => router.push('/search')}
+                className="flex items-center gap-2 text-gray-700 hover:text-cyan-500 transition-colors"
               >
-                + Пост нэмэх
-              </Button>
-            )}
+                <Search className="w-5 h-5" />
+                <span className="hidden sm:inline">Хайх</span>
+              </button>
+              <button
+                onClick={() => router.push('/trips')}
+                className="flex items-center gap-2 text-gray-700 hover:text-cyan-500 transition-colors"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span className="hidden sm:inline">Мессеж</span>
+              </button>
+              <button
+                onClick={() => router.push('/create')}
+                className="text-gray-700 hover:text-cyan-500 transition-colors"
+              >
+                Нийтлэх
+              </button>
+              <button
+                onClick={() => router.push('/profile')}
+                className="flex items-center gap-2"
+              >
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                  <UserIcon className="w-5 h-5 text-gray-600" />
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setSelectedFilter(filter)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${
-                selectedFilter === filter
-                  ? 'bg-black text-white border-black'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              {filter}
-            </button>
-          ))}
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="px-4 py-6">
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">Уншиж байна...</div>
-        ) : rides.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-gray-500">
-              Одоогоор идэвхтэй аялал байхгүй байна
+      {/* Hero Section */}
+      <div className="relative min-h-[600px] flex items-center">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              'url(https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600)',
+            filter: 'brightness(0.7)',
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Хямд үнээр мянга мянган чиглэлд машинаар үйлчлэх
+            </h1>
+          </div>
+
+          {/* Search Form */}
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              {/* Origin */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  Явах
+                </label>
+                <Input
+                  placeholder="Улаанбаатар"
+                  value={origin}
+                  onChange={(e) => setOrigin(e.target.value)}
+                  className="h-12 border-gray-300 focus:border-cyan-500"
+                />
+              </div>
+
+              {/* Destination */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  Очих газ байна
+                </label>
+                <Input
+                  placeholder="Дархан"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="h-12 border-gray-300 focus:border-cyan-500"
+                />
+              </div>
+
+              {/* Date */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  Өнөөдөр
+                </label>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="h-12 border-gray-300 focus:border-cyan-500"
+                />
+              </div>
+
+              {/* Passengers */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <Users className="w-4 h-4" />1 өөрөл
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="8"
+                  value={passengers}
+                  onChange={(e) => setPassengers(e.target.value)}
+                  className="h-12 border-gray-300 focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            {/* Round Trip Checkbox */}
+            <div className="flex items-center gap-2 mb-6">
+              <input
+                type="checkbox"
+                id="roundTrip"
+                checked={isRoundTrip}
+                onChange={(e) => setIsRoundTrip(e.target.checked)}
+                className="w-4 h-4 text-cyan-500 border-gray-300 rounded focus:ring-cyan-500"
+              />
+              <label htmlFor="roundTrip" className="text-sm text-gray-700">
+                Шуурхай буулдал
+              </label>
+            </div>
+
+            {/* Search Button */}
+            <Button
+              onClick={handleSearch}
+              className="w-full h-14 bg-cyan-500 hover:bg-cyan-600 text-white font-medium text-lg rounded-xl"
+            >
+              Хайх
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Feature 1 */}
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-700 rounded-full mb-4">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Баталгаат аюулгүй</h3>
+            <p className="text-gray-600">
+              Хэрэглэгчийн баталгаажсан профайл, үнэлгээ, сэтгэгдэл
             </p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {rides.map((ride) => (
-              <Card key={ride.id} className="shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex flex-row gap-6 items-stretch">
-                    {/* Left: Info */}
-                    <div className="flex-1 flex flex-col justify-between">
-                      {/* Driver Info */}
-                      <div className="flex items-start gap-3 mb-2">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={ride.driver?.profile_photo} />
-                          <AvatarFallback className="bg-gray-200">
-                            {ride.driver?.name?.charAt(0) || 'J'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm">
-                              {ride.driver?.name || 'Driver'}
-                            </span>
-                            {ride.driver?.verified && (
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0">
-                                ⭐ {ride.driver.rating?.toFixed(1) || '4.8'}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            127 аялал • 2 цаг өмнө
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Route */}
-                      <div className="space-y-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          <span className="font-medium text-sm">
-                            {ride.origin_address}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="font-medium text-sm">
-                            {ride.destination_address}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Trip Details */}
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>
-                            {new Date(ride.departure_time).toLocaleDateString(
-                              'mn-MN',
-                              { month: '2-digit', day: '2-digit' },
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{formatTime(ride.departure_time)}</span>
-                        </div>
-                        {ride.vehicle_type && (
-                          <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                            <Car className="w-3.5 h-3.5" />
-                            <span>{ride.vehicle_type}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Users className="w-3.5 h-3.5" />
-                          <span>{ride.available_seats}/4 суудал</span>
-                        </div>
-                      </div>
-
-                      {/* Notes */}
-                      {ride.notes && (
-                        <p className="text-sm text-gray-700 mb-2 line-clamp-2">
-                          {ride.notes}
-                        </p>
-                      )}
-
-                      {/* Price and Actions */}
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="text-xl font-bold text-green-600">
-                          {formatCurrency(ride.price_per_seat)}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {ride.available_seats === 0 ? (
-                            <Badge className="bg-gray-900 text-white px-3 py-1">
-                              Суудал бүлэн
-                            </Badge>
-                          ) : (
-                            user?.role === 'passenger' && (
-                              <Button
-                                onClick={() => handleJoinRide(ride.id)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm"
-                              >
-                                Суудал захиалах
-                              </Button>
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Engagement Stats */}
-                      <div className="flex items-center gap-4 mt-2 pt-2 border-t">
-                        <button className="flex items-center gap-1.5 text-gray-600 hover:text-red-500 transition-colors">
-                          <Heart className="w-4 h-4" />
-                          <span className="text-sm">12</span>
-                        </button>
-                        <button className="flex items-center gap-1.5 text-gray-600 hover:text-blue-500 transition-colors">
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="text-sm">5</span>
-                        </button>
-                      </div>
-                    </div>
-                    {/* Right: Mini Map */}
-                    <div className="w-64 flex-shrink-0 flex items-center justify-center">
-                      <RideMiniMap
-                        originAddress={ride.origin_address}
-                        destinationAddress={ride.destination_address}
-                        originLat={ride.origin_lat}
-                        originLng={ride.origin_lng}
-                        destinationLat={ride.destination_lat}
-                        destinationLng={ride.destination_lng}
-                        className="w-full h-40 rounded-lg border"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          {/* Feature 2 */}
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-700 rounded-full mb-4">
+              <Users className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Олон мянган хөлөөч</h3>
+            <p className="text-gray-600">
+              Та хүссэн газраа хүрэхийн тулд олон жолооч байдаг
+            </p>
           </div>
-        )}
-      </main>
 
-      <BottomNav />
+          {/* Feature 3 */}
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-700 rounded-full mb-4">
+              <Leaf className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Эко найрсаг</h3>
+            <p className="text-gray-600">
+              Нэг машинд олон хүн зорчих нь байгаль орчинд ээлтэй
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

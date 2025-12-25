@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { BottomNav } from '../../components/BottomNav';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent } from '../../components/ui/card';
@@ -14,17 +14,20 @@ import {
 import { Badge } from '../../components/ui/badge';
 import {
   MapPin,
-  Calendar,
   Users,
   Star,
-  ArrowLeft,
-  SlidersHorizontal,
+  Clock,
+  Search,
+  Car,
+  User as UserIcon,
+  MessageSquare,
 } from 'lucide-react';
 import apiClient from '../../lib/api';
 import type { Ride } from '../../types';
-import { formatCurrency, formatTime, formatDate } from '../../lib/utils';
+import { formatCurrency, formatTime } from '../../lib/utils';
 import { geocodeAddress } from '../../lib/geocoding';
 import { RideMiniMap } from '../../components/RideMiniMap';
+import { useDialog } from '../../components/DialogProvider';
 
 // Helper function to extract array from various API response formats
 function extractArray<T>(response: unknown, key: string): T[] {
@@ -35,15 +38,12 @@ function extractArray<T>(response: unknown, key: string): T[] {
   const data = response as Record<string, unknown>;
 
   if (data && typeof data === 'object') {
-    // Check if there's a 'data' property that is an array (common format: {data: [...], total: number})
     if ('data' in data && Array.isArray(data.data)) {
       return data.data as T[];
     }
-    // Check if the key exists and is an array
     if (key in data && Array.isArray(data[key])) {
       return data[key] as T[];
     }
-    // Check nested data.key format
     if ('data' in data) {
       const nestedData = data.data as Record<string, unknown>;
       if (
@@ -62,20 +62,37 @@ function extractArray<T>(response: unknown, key: string): T[] {
 
 export default function SearchPage() {
   const router = useRouter();
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showAlert } = useDialog();
+
+  const [origin, setOrigin] = useState(searchParams.get('origin') || '');
+  const [destination, setDestination] = useState(
+    searchParams.get('destination') || '',
+  );
+  const [date, setDate] = useState(searchParams.get('date') || '');
   const [results, setResults] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [bookingRideId, setBookingRideId] = useState<string | null>(null);
+  const [priceRange, setPriceRange] = useState([0, 150000]);
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState<string>('');
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (origin && destination) {
+      handleSearch();
+    }
+  }, []);
 
   const handleSearch = async () => {
-    console.log('=== SEARCH STARTED ===');
-    console.log('Origin input:', origin);
-    console.log('Destination input:', destination);
-
     if (!origin || !destination) {
-      alert('Хаанаас болон хаашаа хоёрыг оруулна уу');
+      showAlert('Хаанаас болон хаашаа хоёрыг оруулна уу');
       return;
     }
 
@@ -83,29 +100,16 @@ export default function SearchPage() {
     setSearched(true);
 
     try {
-      // Geocode addresses to get coordinates
-      console.log('Starting geocoding...');
       const originGeo = await geocodeAddress(origin);
-      console.log('Origin geocoded:', originGeo);
-
       const destinationGeo = await geocodeAddress(destination);
-      console.log('Destination geocoded:', destinationGeo);
 
-      if (!originGeo) {
-        console.error('Origin geocoding failed');
-        alert('Эхлэх газрын хаяг олдсонгүй. Дахин оролдоно уу');
+      if (!originGeo || !destinationGeo) {
+        showAlert('Хаягийн мэдээлэл олдсонгүй');
         setLoading(false);
         return;
       }
 
-      if (!destinationGeo) {
-        console.error('Destination geocoding failed');
-        alert('Очих газрын хаяг олдсонгүй. Дахин оролдоно уу');
-        setLoading(false);
-        return;
-      }
-
-      const searchParams = {
+      const searchApiParams = {
         originLat: originGeo.lat,
         originLng: originGeo.lng,
         destinationLat: destinationGeo.lat,
@@ -113,24 +117,12 @@ export default function SearchPage() {
         maxRadius: 10,
       };
 
-      console.log('Search API request params:', searchParams);
-
-      const response = await apiClient.rides.search(searchParams);
-      console.log('Search API response:', response);
-
+      const response = await apiClient.rides.search(searchApiParams);
       const data = response.data || response;
-      console.log('Data after extraction:', data);
-
       const searchResults = extractArray<Ride>(data, 'rides');
-
-      console.log('Search results count:', searchResults.length);
-      console.log('Search results:', searchResults);
-
       setResults(searchResults);
-      console.log('=== SEARCH COMPLETED ===');
     } catch (error) {
-      console.error('=== SEARCH FAILED ===');
-      console.error('Error details:', error);
+      console.error('Search failed:', error);
       setResults([]);
     } finally {
       setLoading(false);
@@ -140,229 +132,339 @@ export default function SearchPage() {
   const handleBookRide = async (rideId: string) => {
     try {
       setBookingRideId(rideId);
-      console.log('Booking ride:', rideId);
-
-      await apiClient.bookings.create({
-        rideId,
-        seats: 1,
-      });
-
-      alert('Суудал захиалга амжилттай илгээгдлээ!');
-
-      // Refresh search results to update available seats
+      await apiClient.bookings.create({ rideId, seats: 1 });
+      showAlert('Суудал захиалга амжилттай илгээгдлээ!');
       handleSearch();
     } catch (error: unknown) {
-      console.error('Booking failed:', error);
       const errorMessage = (error as Error).message || 'Алдаа гарлаа';
-
-      // User-friendly error messages
-      if (errorMessage.includes('already have a pending booking')) {
-        alert('Та энэ аялалд аль хэдийн захиалга үүсгэсэн байна');
-      } else if (errorMessage.includes('not enough seats')) {
-        alert('Суудал дүүрсэн байна');
-      } else if (errorMessage.includes('cannot book your own ride')) {
-        alert('Та өөрийн аялалд захиалга үүсгэж болохгүй');
-      } else {
-        alert(errorMessage);
-      }
+      showAlert(errorMessage);
     } finally {
       setBookingRideId(null);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white pb-20">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-40">
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() => router.back()}
-              className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-lg font-semibold">Аялал хайх</h1>
-          </div>
+  const timeFilters = [
+    { label: 'Өглөө (06:00 - 12:00)', value: 'morning', icon: Clock },
+    { label: 'Үдэс хойш (12:00 - 18:00)', value: 'afternoon', icon: Clock },
+    { label: 'Орой (18:00 - 06:00)', value: 'evening', icon: Clock },
+  ];
 
-          {/* Search Inputs */}
-          <div className="space-y-3">
+  const filteredResults = results.filter((ride) => {
+    if (
+      ride.price_per_seat < priceRange[0] ||
+      ride.price_per_seat > priceRange[1]
+    ) {
+      return false;
+    }
+
+    if (selectedTimeFilter) {
+      const hour = new Date(ride.departure_time).getHours();
+      if (selectedTimeFilter === 'morning' && (hour < 6 || hour >= 12))
+        return false;
+      if (selectedTimeFilter === 'afternoon' && (hour < 12 || hour >= 18))
+        return false;
+      if (selectedTimeFilter === 'evening' && hour >= 6 && hour < 18)
+        return false;
+    }
+
+    return true;
+  });
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Уншиж байна...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Car className="w-6 h-6 text-cyan-500" />
+              <span className="text-xl font-bold text-cyan-500">HopOn</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => router.push('/')}
+                className="flex items-center gap-2 text-gray-700 hover:text-cyan-500 transition-colors"
+              >
+                <Search className="w-5 h-5" />
+                <span className="hidden sm:inline">Хайх</span>
+              </button>
+              <button
+                onClick={() => router.push('/trips')}
+                className="flex items-center gap-2 text-gray-700 hover:text-cyan-500 transition-colors"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span className="hidden sm:inline">Мессеж</span>
+              </button>
+              <button
+                onClick={() => router.push('/create')}
+                className="text-gray-700 hover:text-cyan-500 transition-colors"
+              >
+                Нийтлэх
+              </button>
+              <button
+                onClick={() => router.push('/profile')}
+                className="flex items-center gap-2"
+              >
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                  <UserIcon className="w-5 h-5 text-gray-600" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Search Bar */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                className="pl-10"
-                placeholder="Хаанаас (жишээ: Улаанбаатар)"
+                className="pl-10 h-11"
+                placeholder="Явах"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
               />
             </div>
-
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-600" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                className="pl-10"
-                placeholder="Хаашаа (жишээ: Дархан)"
+                className="pl-10 h-11"
+                placeholder="Очих газар"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
               />
             </div>
-
+            <Input
+              type="date"
+              className="h-11"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
             <Button
               onClick={handleSearch}
-              className="w-full bg-blue-600 hover:bg-blue-700"
               disabled={loading}
+              className="h-11 bg-cyan-500 hover:bg-cyan-600"
             >
               {loading ? 'Хайж байна...' : 'Хайх'}
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Results */}
-      <main className="px-4 py-4">
-        {loading ? (
-          <div className="text-center py-8">Хайж байна...</div>
-        ) : !searched ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Хайлт хийнэ үү</p>
-          </div>
-        ) : results.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">5 аялал олдсоноос</p>
-            <p className="text-sm text-gray-400 mt-2">
-              Шүүлтүүрийг өөрчилж үзнэ үү
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="text-sm text-gray-600 mb-3">
-              {results.length} аялал олдлоо
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Sidebar - Filters */}
+          <div className="col-span-12 md:col-span-3 space-y-6">
+            {/* Time Filters */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="font-semibold mb-4">Явах цаг</h3>
+              <div className="space-y-3">
+                {timeFilters.map((filter) => (
+                  <button
+                    key={filter.value}
+                    onClick={() =>
+                      setSelectedTimeFilter(
+                        selectedTimeFilter === filter.value ? '' : filter.value,
+                      )
+                    }
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors ${
+                      selectedTimeFilter === filter.value
+                        ? 'border-cyan-500 bg-cyan-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <filter.icon className="w-5 h-5" />
+                    <span className="text-sm">{filter.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {results.map((ride) => (
-              <Card
-                key={ride.id}
-                className="overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-4">
-                  <div className="flex flex-row gap-6 items-stretch">
-                    {/* Left: Info */}
-                    <div className="flex-1 flex flex-col justify-between">
-                      {/* Driver Info */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={ride.driver?.profile_photo} />
-                          <AvatarFallback>
-                            {ride.driver?.name?.charAt(0) || 'J'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm">
-                              {ride.driver?.name || 'Driver'}
-                            </span>
-                            {ride.driver?.verified && (
-                              <Badge variant="secondary" className="text-xs">
-                                ⭐ {ride.driver.rating?.toFixed(1) || '4.8'}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {ride.driver?.verified
-                              ? '127 аялал'
-                              : 'Шинэ жолооч'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Route */}
-                      <div className="space-y-2 mb-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          <span className="font-medium">
-                            {ride.origin_address}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="font-medium">
-                            {ride.destination_address}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Details */}
-                      <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
-                        <span>
-                          {formatDate(ride.departure_time)} •{' '}
-                          {formatTime(ride.departure_time)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {ride.available_seats} суудал
-                        </span>
-                      </div>
-
-                      {ride.notes && (
-                        <p className="text-xs text-gray-600 mb-2 line-clamp-1">
-                          {ride.notes}
-                        </p>
-                      )}
-
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="text-lg font-bold text-blue-600">
-                          {formatCurrency(ride.price_per_seat)}
-                        </div>
-                        <div className="flex gap-2">
-                          {ride.available_seats > 0 ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleBookRide(ride.id)}
-                              className="bg-green-600 hover:bg-green-700"
-                              disabled={bookingRideId === ride.id}
-                            >
-                              {bookingRideId === ride.id
-                                ? 'Захиалж байна...'
-                                : 'Захиалах'}
-                            </Button>
-                          ) : (
-                            <Badge variant="secondary" className="px-3 py-1">
-                              Дүүрсэн
-                            </Badge>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => router.push(`/rides/${ride.id}`)}
-                          >
-                            Дэлгэрэнгүй
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Mini Map */}
-                    <div className="w-64 flex-shrink-0 flex items-center justify-center">
-                      <RideMiniMap
-                        originAddress={ride.origin_address}
-                        destinationAddress={ride.destination_address}
-                        originLat={ride.origin_lat}
-                        originLng={ride.origin_lng}
-                        destinationLat={ride.destination_lat}
-                        destinationLng={ride.destination_lng}
-                        className="w-full h-40 rounded-lg border"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {/* Price Range */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="font-semibold mb-4">Үнэ</h3>
+              <input
+                type="range"
+                min="0"
+                max="150000"
+                value={priceRange[1]}
+                onChange={(e) =>
+                  setPriceRange([priceRange[0], parseInt(e.target.value)])
+                }
+                className="w-full h-2 bg-cyan-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
+                <span>₮{priceRange[0].toLocaleString()}</span>
+                <span>₮{priceRange[1].toLocaleString()}</span>
+              </div>
+            </div>
           </div>
-        )}
-      </main>
 
-      <BottomNav />
+          {/* Right Content - Results */}
+          <div className="col-span-12 md:col-span-9">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">
+                Танд санал болгох аялалууд
+              </h2>
+              <p className="text-gray-600 text-sm">
+                {filteredResults.length} аялал
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12 text-gray-500">
+                Хайж байна...
+              </div>
+            ) : !searched ? (
+              <div className="text-center py-12 text-gray-500">
+                Хайх товчийг дарж аялал хайна уу
+              </div>
+            ) : filteredResults.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">Аялал олдсонгүй</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredResults.map((ride) => (
+                  <Card
+                    key={ride.id}
+                    className="shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex gap-6">
+                        {/* Left: Map */}
+                        <div className="w-48 flex-shrink-0">
+                          <RideMiniMap
+                            originAddress={ride.origin_address}
+                            destinationAddress={ride.destination_address}
+                            originLat={ride.origin_lat}
+                            originLng={ride.origin_lng}
+                            destinationLat={ride.destination_lat}
+                            destinationLng={ride.destination_lng}
+                            className="w-full h-32 rounded-lg"
+                          />
+                        </div>
+
+                        {/* Center: Info */}
+                        <div className="flex-1 space-y-3">
+                          {/* Time and Route */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-8">
+                              <div>
+                                <div className="text-2xl font-bold">
+                                  {formatTime(ride.departure_time)}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  4ч 10м
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                  <div className="flex-1 h-px bg-gray-300"></div>
+                                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-gray-600 mt-1">
+                                  <span>{ride.origin_address}</span>
+                                  <span>{ride.destination_address}</span>
+                                </div>
+                              </div>
+                              <div className="text-2xl font-bold">
+                                {formatTime(
+                                  new Date(
+                                    new Date(ride.departure_time).getTime() +
+                                      4 * 60 * 60 * 1000,
+                                  ).toISOString(),
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Driver Info */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-12 h-12">
+                                <AvatarImage src={ride.driver?.profile_photo} />
+                                <AvatarFallback>
+                                  {ride.driver?.name?.charAt(0) || 'D'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">
+                                    {ride.driver?.name || 'Driver'}
+                                  </span>
+                                  <div className="flex items-center gap-1 text-yellow-500">
+                                    <Star className="w-4 h-4 fill-current" />
+                                    <span className="text-sm font-medium">
+                                      {ride.driver?.rating?.toFixed(1) || '4.8'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  2 сууддаг удэсэн
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Price and Action */}
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-cyan-500">
+                                {formatCurrency(ride.price_per_seat)}
+                              </div>
+                              <Button
+                                onClick={() => handleBookRide(ride.id)}
+                                disabled={
+                                  bookingRideId === ride.id ||
+                                  ride.available_seats === 0
+                                }
+                                className="mt-2 bg-cyan-500 hover:bg-cyan-600 px-6"
+                              >
+                                {bookingRideId === ride.id
+                                  ? 'Захиалж байна...'
+                                  : ride.available_seats === 0
+                                    ? 'Дүүрсэн'
+                                    : 'Дэлгэрэнгүй үзэх'}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Tags */}
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="secondary"
+                              className="bg-yellow-50 text-yellow-700 border-yellow-200"
+                            >
+                              ⚡ Баталгаажсан
+                            </Badge>
+                            <Badge
+                              variant="secondary"
+                              className="bg-green-50 text-green-700 border-green-200"
+                            >
+                              ⚡ Алдартай
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

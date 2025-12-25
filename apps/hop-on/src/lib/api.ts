@@ -372,6 +372,61 @@ class ApiClient {
       return this.request<Review[]>(`/reviews/user/${userId}`);
     },
   };
+
+  // ============================================
+  // CHAT/CONVERSATIONS ENDPOINTS
+  // ============================================
+  conversations = {
+    list: async () => {
+      return this.request<any[]>('/chat/conversations');
+    },
+
+    getById: async (id: string) => {
+      return this.request<any>(`/chat/conversations/${id}`);
+    },
+
+    create: async (data: { rideId: string; participantIds: string[] }) => {
+      return this.request<any>('/chat/conversations', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+  };
+
+  messages = {
+    getByConversation: async (
+      conversationId: string,
+      params?: { limit?: number; offset?: number },
+    ) => {
+      const query = params
+        ? new URLSearchParams(params as Record<string, string>).toString()
+        : '';
+      return this.request<any[]>(
+        `/chat/messages/conversation/${conversationId}${query ? '?' + query : ''}`,
+      );
+    },
+
+    send: async (data: { conversationId: string; content: string }) => {
+      return this.request<any>('/chat/messages', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    markAsRead: async (data: {
+      conversationId: string;
+      messageIds: string[];
+    }) => {
+      return this.request('/chat/messages/mark-read', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    },
+
+    getUnreadCount: async () => {
+      return this.request<{ count: number }>('/chat/messages/unread-count');
+    },
+  };
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

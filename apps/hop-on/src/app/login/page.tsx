@@ -4,13 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../components/ui/card';
+import { Car } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -35,71 +29,89 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
-      <Card className="w-full max-w-md shadow-none border-0">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-8">
-            <div className="text-3xl font-bold text-blue-600">HopOn</div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="bg-cyan-500 p-4 rounded-2xl shadow-lg mb-4">
+            <Car className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-xl text-center font-semibold">
-            Нэвтрэх
-          </CardTitle>
-          <CardDescription className="text-center text-sm">
-            Таны дансанд нэвтэрнэ үү
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <h1 className="text-4xl font-bold text-cyan-500 mb-2">HopOn</h1>
+          <p className="text-gray-600 text-sm">
+            Your trusted carpooling community
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <h2 className="text-2xl font-bold text-center mb-2">Нэвтрэх</h2>
+          <p className="text-center text-gray-500 text-sm mb-6">
+            Өөрийн бүртгэлээр нэвтрэх
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <label htmlFor="phone" className="text-sm font-medium">
+              <label
+                htmlFor="phone"
+                className="text-sm font-medium text-gray-700"
+              >
                 Утасны дугаар
               </label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+976 9999 9999"
+                placeholder="+97699887766"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                className="h-12 border-gray-300 focus:border-cyan-500 focus:ring-cyan-500"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
                 Нууц үг
               </label>
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Нууц үгээ оруулна уу"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="h-12 border-gray-300 focus:border-cyan-500 focus:ring-cyan-500"
                 required
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Уншиж байна...' : 'Нэвтрэх'}
+            <Button
+              type="submit"
+              className="w-full h-12 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-xl transition-colors text-base"
+              disabled={loading}
+            >
+              {loading ? 'Уншиж байна...' : 'Нэвтрэх →'}
             </Button>
 
-            <div className="text-center text-sm">
-              <span className="text-gray-600">Бүртгэлгүй юу? </span>
+            <div className="text-center text-sm pt-2">
+              <span className="text-gray-600">Шинэ хэрэглэгч үү? </span>
               <Link
                 href="/register"
-                className="text-blue-600 hover:underline font-medium"
+                className="text-cyan-500 hover:underline font-medium"
               >
                 Бүртгүүлэх
               </Link>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

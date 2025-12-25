@@ -22,10 +22,12 @@ import {
 } from 'lucide-react';
 import apiClient from '../../lib/api';
 import { geocodeAddress } from '../../lib/geocoding';
+import { useDialog } from '../../components/DialogProvider';
 
 export default function CreateRidePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { showAlert } = useDialog();
   const [loading, setLoading] = useState(false);
 
   // Set default date to tomorrow and time to 9:00 AM
@@ -47,15 +49,15 @@ export default function CreateRidePage() {
 
     // Validation
     if (!formData.originAddress.trim()) {
-      alert('Эхлэх газраа оруулна уу');
+      showAlert('Эхлэх газраа оруулна уу');
       return;
     }
     if (!formData.destinationAddress.trim()) {
-      alert('Очих газраа оруулна уу');
+      showAlert('Очих газраа оруулна уу');
       return;
     }
     if (!formData.price || parseInt(formData.price) <= 0) {
-      alert('Үнэ оруулна уу');
+      showAlert('Үнэ оруулна уу');
       return;
     }
 
@@ -67,13 +69,13 @@ export default function CreateRidePage() {
       const destinationGeo = await geocodeAddress(formData.destinationAddress);
 
       if (!originGeo) {
-        alert('Эхлэх газрын хаяг олдсонгүй. Дахин оролдоно уу');
+        showAlert('Эхлэх газрын хаяг олдсонгүй. Дахин оролдоно уу');
         setLoading(false);
         return;
       }
 
       if (!destinationGeo) {
-        alert('Очих газрын хаяг олдсонгүй. Дахин оролдоно уу');
+        showAlert('Очих газрын хаяг олдсонгүй. Дахин оролдоно уу');
         setLoading(false);
         return;
       }
@@ -102,11 +104,11 @@ export default function CreateRidePage() {
       const response = await apiClient.rides.create(rideData);
       console.log('Ride created:', response);
 
-      alert('Аялал амжилттай үүслээ!');
+      showAlert('Аялал амжилттай үүслээ!');
       router.push('/trips');
     } catch (error: unknown) {
       console.error('Create ride error:', error);
-      alert((error as Error).message || 'Алдаа гарлаа');
+      showAlert((error as Error).message || 'Алдаа гарлаа');
     } finally {
       setLoading(false);
     }
@@ -128,32 +130,31 @@ export default function CreateRidePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-40">
-        <div className="px-4 py-3 flex items-center gap-3">
+      <header className="bg-white border-b sticky top-0 z-40 shadow-sm">
+        <div className="px-4 py-4 flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Буцах"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="text-lg font-semibold">Аялалын пост үүсгэх</h1>
+          <h1 className="text-xl font-bold text-gray-900">Аялалын пост үүсгэх</h1>
         </div>
       </header>
 
-      <main className="px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <main className="px-4 py-6 max-w-2xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Origin & Destination */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Хаанаас</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Хаанаас</h2>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-green-600" />
-                  Эхлэх газар
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-red-500" />
+                  Өчиг тавьж
                 </label>
                 <Input
                   placeholder="Жишээ: Улаанбаатар, Сүхбаатарын талбай"
@@ -161,14 +162,15 @@ export default function CreateRidePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, originAddress: e.target.value })
                   }
+                  className="h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                  Очих газар
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  Жишээ: Дархан, Тев талбай
                 </label>
                 <Input
                   placeholder="Жишээ: Дархан, Тев талбай"
@@ -179,107 +181,103 @@ export default function CreateRidePage() {
                       destinationAddress: e.target.value,
                     })
                   }
+                  className="h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                   required
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Date & Time */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Огноо</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Огноо
-                  </label>
-                  <Input
-                    type="date"
-                    value={formData.departureDate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        departureDate: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Цаг
-                  </label>
-                  <Input
-                    type="time"
-                    value={formData.departureTime}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        departureTime: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Огноо</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-600" />
+                  Огноо
+                </label>
+                <Input
+                  type="date"
+                  value={formData.departureDate}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      departureDate: e.target.value,
+                    })
+                  }
+                  className="h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  required
+                />
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-600" />
+                  Цаг
+                </label>
+                <Input
+                  type="time"
+                  value={formData.departureTime}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      departureTime: e.target.value,
+                    })
+                  }
+                  className="h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Seats & Price */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Суудлын тоо</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Суудал
-                  </label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={formData.seats}
-                    onChange={(e) =>
-                      setFormData({ ...formData, seats: e.target.value })
-                    }
-                    required
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Үнэ (төгрөг)
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="15000"
-                    value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
-                    required
-                  />
-                </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Суудлын тоо</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-600" />
+                  Суудал
+                </label>
+                <select
+                  className="flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                  value={formData.seats}
+                  onChange={(e) =>
+                    setFormData({ ...formData, seats: e.target.value })
+                  }
+                  required
+                >
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-gray-600" />
+                  Үнэ (төгрөг)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="15000"
+                  value={formData.price}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
+                  className="h-11 border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700"
+            className="w-full h-14 text-base font-semibold bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
             disabled={loading}
           >
             {loading ? 'Үүсгэж байна...' : 'Пост үүсгэх'}
