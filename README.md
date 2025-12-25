@@ -8,11 +8,12 @@ Ride-sharing platform monorepo built with Nx, NestJS, and Next.js.
 
 - Node.js 18+ and npm
 - Git
+- PostgreSQL (or use cloud Neon database)
 
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/Bagee1/hope-on.git
+git clone https://github.com/Bagee1/hop-on.git
 cd hop-on
 ```
 
@@ -22,28 +23,34 @@ cd hop-on
 npm install --legacy-peer-deps
 ```
 
-> **Note:** If you encounter peer dependency conflicts or TypeScript errors like "Cannot find type definition file for 'tailwindcss'", use the `--legacy-peer-deps` flag.
+> **Note:** If you encounter peer dependency conflicts or TypeScript errors, use the `--legacy-peer-deps` flag.
 
 ### 3. Environment Setup
 
 The `.env` files are already configured with Neon database credentials. All services will connect to the cloud database automatically.
 
-**Services:**
+**Services & Ports:**
 
-- Auth Service (Port 3001)
-- API Gateway (Port 3000)
-- Ride Service (Port 3003)
-- Booking Service (Port 3004)
-- Payment Service (Port 3005)
-- Chat Service (Port 3006)
-- Notification Service (Port 3007)
+- **Frontend (Next.js):** http://localhost:3002
+- **API Gateway:** http://localhost:3000
+- **Auth Service:** http://localhost:3001
+- **Ride Service:** http://localhost:3003
+- **Booking Service:** http://localhost:3004
+- **Payment Service:** http://localhost:3005
+- **Chat Service:** http://localhost:3006
+- **Notification Service:** http://localhost:3007
 
 ### 4. Start All Services
 
 **Windows:**
 
 ```powershell
+# Start all backend services
 .\start-all-services.ps1
+
+# In a separate terminal, start frontend
+cd apps/hop-on
+npm run dev
 ```
 
 **Linux/Mac:**
@@ -57,9 +64,17 @@ cd apps/services/booking-service && npm run dev
 cd apps/services/payment-service && npm run dev
 cd apps/services/chat-service && npm run dev
 cd apps/services/notification-service && npm run dev
+
+# Start frontend
+cd apps/hop-on && npm run dev
 ```
 
-### 5. Test the Services
+### 5. Access the Application
+
+- **Frontend:** http://localhost:3002
+- **API Gateway:** http://localhost:3000/api/v1
+
+### 6. Test the Services
 
 ```powershell
 # Check if services are running
@@ -74,13 +89,30 @@ $body = @{phone='+97699999999';password='password123'} | ConvertTo-Json
 Invoke-RestMethod -Uri http://localhost:3001/auth/login -Method POST -Body $body -ContentType 'application/json'
 ```
 
+## ✨ Features
+
+### Frontend Features
+- **Ride Search:** Geocoding with Google Maps API integration
+- **Mini Maps:** Visual route display on all ride cards
+- **Responsive Layout:** Clean, Apple Maps-inspired design
+- **Real-time Updates:** Live ride and booking status
+- **Role-based Views:** Different interfaces for drivers and passengers
+
+### Backend Features
+- **Microservices Architecture:** 7 independent NestJS services
+- **JWT Authentication:** Secure token-based auth
+- **PostgreSQL Database:** Cloud-hosted on Neon
+- **RESTful APIs:** Well-documented endpoints
+- **Real-time Chat:** WebSocket support
+
 ## 📚 Architecture
 
 This is a microservices architecture with:
 
-- **Frontend:** Next.js app (`apps/hop-on`)
+- **Frontend:** Next.js 16.0.10 with TypeScript (`apps/hop-on`)
 - **Backend Services:** 7 NestJS microservices
 - **Database:** Neon PostgreSQL (Cloud)
+- **External APIs:** Google Maps Geocoding API
 - **Shared Packages:** TypeScript types, utilities, UI components
 
 ## 🔧 Development
@@ -92,6 +124,15 @@ cd apps/services/auth-service
 npm run dev
 ```
 
+### Run Frontend Only
+
+```bash
+cd apps/hop-on
+npm run dev
+```
+
+Frontend will run on http://localhost:3002
+
 ### Database Management
 
 ```bash
@@ -99,6 +140,17 @@ npm run dev
 cd infra/db
 node neon-reseed.js
 ```
+
+### Google Maps API Setup
+
+The project uses Google Maps Geocoding API. API key is configured in:
+- `apps/hop-on/src/lib/geocoding.ts`
+- `apps/hop-on/src/components/RideMiniMap.tsx`
+
+To use your own key:
+1. Get API key from [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable "Geocoding API" and "Maps Static API"
+3. Update the API key in the files above or use environment variable `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
 
 ## 📖 Documentation
 
