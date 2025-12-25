@@ -96,7 +96,7 @@ export default function CreateRidePage() {
         departureTime: departureDateTime.toISOString(),
         availableSeats: parseInt(formData.seats),
         pricePerSeat: parseInt(formData.price),
-      };                                                                                                                                                                                                                                                                                                                                                        
+      };
 
       console.log('Creating ride:', rideData);
       const response = await apiClient.rides.create(rideData);

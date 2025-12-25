@@ -31,9 +31,9 @@ function extractArray<T>(response: unknown, key: string): T[] {
   if (Array.isArray(response)) {
     return response as T[];
   }
-  
+
   const data = response as Record<string, unknown>;
-  
+
   if (data && typeof data === 'object') {
     // Check if there's a 'data' property that is an array (common format: {data: [...], total: number})
     if ('data' in data && Array.isArray(data.data)) {
@@ -46,12 +46,17 @@ function extractArray<T>(response: unknown, key: string): T[] {
     // Check nested data.key format
     if ('data' in data) {
       const nestedData = data.data as Record<string, unknown>;
-      if (nestedData && typeof nestedData === 'object' && key in nestedData && Array.isArray(nestedData[key])) {
+      if (
+        nestedData &&
+        typeof nestedData === 'object' &&
+        key in nestedData &&
+        Array.isArray(nestedData[key])
+      ) {
         return nestedData[key] as T[];
       }
     }
   }
-  
+
   return [];
 }
 
@@ -115,12 +120,12 @@ export default function SearchPage() {
 
       const data = response.data || response;
       console.log('Data after extraction:', data);
-      
+
       const searchResults = extractArray<Ride>(data, 'rides');
-      
+
       console.log('Search results count:', searchResults.length);
       console.log('Search results:', searchResults);
-      
+
       setResults(searchResults);
       console.log('=== SEARCH COMPLETED ===');
     } catch (error) {
@@ -136,14 +141,14 @@ export default function SearchPage() {
     try {
       setBookingRideId(rideId);
       console.log('Booking ride:', rideId);
-      
-      await apiClient.bookings.create({ 
-        rideId, 
-        seats: 1 
+
+      await apiClient.bookings.create({
+        rideId,
+        seats: 1,
       });
-      
+
       alert('Суудал захиалга амжилттай илгээгдлээ!');
-      
+
       // Refresh search results to update available seats
       handleSearch();
     } catch (error: unknown) {
@@ -240,101 +245,114 @@ export default function SearchPage() {
                 className="overflow-hidden hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-4">
-                  {/* Mini Map */}
-                  <RideMiniMap
-                    originAddress={ride.origin_address}
-                    destinationAddress={ride.destination_address}
-                    originLat={ride.origin_lat}
-                    originLng={ride.origin_lng}
-                    destinationLat={ride.destination_lat}
-                    destinationLng={ride.destination_lng}
-                    className="h-32 mb-3"
-                  />
+                  <div className="flex flex-row gap-6 items-stretch">
+                    {/* Left: Info */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      {/* Driver Info */}
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={ride.driver?.profile_photo} />
+                          <AvatarFallback>
+                            {ride.driver?.name?.charAt(0) || 'J'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">
+                              {ride.driver?.name || 'Driver'}
+                            </span>
+                            {ride.driver?.verified && (
+                              <Badge variant="secondary" className="text-xs">
+                                ⭐ {ride.driver.rating?.toFixed(1) || '4.8'}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {ride.driver?.verified
+                              ? '127 аялал'
+                              : 'Шинэ жолооч'}
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Driver Info */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={ride.driver?.profile_photo} />
-                      <AvatarFallback>
-                        {ride.driver?.name?.charAt(0) || 'J'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">
-                          {ride.driver?.name || 'Driver'}
+                      {/* Route */}
+                      <div className="space-y-2 mb-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="font-medium">
+                            {ride.origin_address}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                          <span className="font-medium">
+                            {ride.destination_address}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+                        <span>
+                          {formatDate(ride.departure_time)} •{' '}
+                          {formatTime(ride.departure_time)}
                         </span>
-                        {ride.driver?.verified && (
-                          <Badge variant="secondary" className="text-xs">
-                            ⭐ {ride.driver.rating?.toFixed(1) || '4.8'}
-                          </Badge>
-                        )}
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {ride.available_seats} суудал
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {ride.driver?.verified ? '127 аялал' : 'Шинэ жолооч'}
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Route */}
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="font-medium">{ride.origin_address}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                      <span className="font-medium">
-                        {ride.destination_address}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
-                    <span>
-                      {formatDate(ride.departure_time)} •{' '}
-                      {formatTime(ride.departure_time)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      {ride.available_seats} суудал
-                    </span>
-                  </div>
-
-                  {ride.notes && (
-                    <p className="text-xs text-gray-600 mb-3 line-clamp-1">
-                      {ride.notes}
-                    </p>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-lg font-bold text-blue-600">
-                      {formatCurrency(ride.price_per_seat)}
-                    </div>
-                    <div className="flex gap-2">
-                      {ride.available_seats > 0 ? (
-                        <Button
-                          size="sm"
-                          onClick={() => handleBookRide(ride.id)}
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={bookingRideId === ride.id}
-                        >
-                          {bookingRideId === ride.id ? 'Захиалж байна...' : 'Захиалах'}
-                        </Button>
-                      ) : (
-                        <Badge variant="secondary" className="px-3 py-1">
-                          Дүүрсэн
-                        </Badge>
+                      {ride.notes && (
+                        <p className="text-xs text-gray-600 mb-2 line-clamp-1">
+                          {ride.notes}
+                        </p>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => router.push(`/rides/${ride.id}`)}
-                      >
-                        Дэлгэрэнгүй
-                      </Button>
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="text-lg font-bold text-blue-600">
+                          {formatCurrency(ride.price_per_seat)}
+                        </div>
+                        <div className="flex gap-2">
+                          {ride.available_seats > 0 ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleBookRide(ride.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                              disabled={bookingRideId === ride.id}
+                            >
+                              {bookingRideId === ride.id
+                                ? 'Захиалж байна...'
+                                : 'Захиалах'}
+                            </Button>
+                          ) : (
+                            <Badge variant="secondary" className="px-3 py-1">
+                              Дүүрсэн
+                            </Badge>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => router.push(`/rides/${ride.id}`)}
+                          >
+                            Дэлгэрэнгүй
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Mini Map */}
+                    <div className="w-64 flex-shrink-0 flex items-center justify-center">
+                      <RideMiniMap
+                        originAddress={ride.origin_address}
+                        destinationAddress={ride.destination_address}
+                        originLat={ride.origin_lat}
+                        originLng={ride.origin_lng}
+                        destinationLat={ride.destination_lat}
+                        destinationLng={ride.destination_lng}
+                        className="w-full h-40 rounded-lg border"
+                      />
                     </div>
                   </div>
                 </CardContent>

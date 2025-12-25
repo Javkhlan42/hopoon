@@ -302,7 +302,9 @@ class ApiClient {
   // ============================================
   notifications = {
     list: async (params?: { page?: number; limit?: number }) => {
-      const query = params ? new URLSearchParams(params as Record<string, string>).toString() : '';
+      const query = params
+        ? new URLSearchParams(params as Record<string, string>).toString()
+        : '';
       return this.request<PaginatedResponse<Notification>>(
         `/notifications${query ? '?' + query : ''}`,
       );

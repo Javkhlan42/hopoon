@@ -120,13 +120,14 @@ export class BookingsService {
       bookings.map(async (booking) => {
         try {
           // Fetch ride details
-          const rideServiceUrl = process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
+          const rideServiceUrl =
+            process.env.RIDE_SERVICE_URL || 'http://localhost:3003';
           const rideResponse = await firstValueFrom(
             this.httpService.get(`${rideServiceUrl}/rides/${booking.ride_id}`),
           );
-          
+
           const rideData = rideResponse.data?.data || rideResponse.data;
-          
+
           return {
             ...booking,
             ride: rideData,
@@ -337,11 +338,11 @@ export class BookingsService {
       const response = await firstValueFrom(
         this.httpService.get(`${rideServiceUrl}/rides?driverId=${driverId}`),
       );
-      
+
       // Handle different response formats from ride-service
       const ridesData = response.data?.data || response.data;
       const rides = Array.isArray(ridesData) ? ridesData : [];
-      
+
       rideIds = rides.map((ride: any) => ride.id);
       console.log(`Found ${rideIds.length} rides for driver ${driverId}`);
     } catch (error) {
@@ -368,7 +369,7 @@ export class BookingsService {
       .take(limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
-    
+
     console.log(`Found ${total} bookings for driver's rides`);
 
     return { data, total };

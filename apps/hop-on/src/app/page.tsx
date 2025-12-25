@@ -27,9 +27,9 @@ function extractArray<T>(response: unknown, key: string): T[] {
   if (Array.isArray(response)) {
     return response as T[];
   }
-  
+
   const data = response as Record<string, unknown>;
-  
+
   if (data && typeof data === 'object') {
     // Check if there's a 'data' property that is an array (common format: {data: [...], total: number})
     if ('data' in data && Array.isArray(data.data)) {
@@ -42,12 +42,17 @@ function extractArray<T>(response: unknown, key: string): T[] {
     // Check nested data.key format
     if ('data' in data) {
       const nestedData = data.data as Record<string, unknown>;
-      if (nestedData && typeof nestedData === 'object' && key in nestedData && Array.isArray(nestedData[key])) {
+      if (
+        nestedData &&
+        typeof nestedData === 'object' &&
+        key in nestedData &&
+        Array.isArray(nestedData[key])
+      ) {
         return nestedData[key] as T[];
       }
     }
   }
-  
+
   return [];
 }
 
@@ -80,7 +85,7 @@ export default function HomePage() {
       console.log('Rides API Response:', response);
       const data = response.data || response;
       console.log('Data extracted:', data);
-      
+
       const ridesData = extractArray<Ride>(data, 'data');
       console.log('Rides array:', ridesData);
       console.log('Setting rides state with', ridesData.length, 'items');

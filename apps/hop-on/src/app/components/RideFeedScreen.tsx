@@ -75,7 +75,7 @@ export function RideFeedScreen({
   onChat,
   onProfile,
   onStartTracking,
-  onManageBookings
+  onManageBookings,
 }: RideFeedScreenProps) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
