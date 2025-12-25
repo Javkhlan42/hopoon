@@ -30,7 +30,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=4200
+ENV PORT=3002
 ENV HOSTNAME="0.0.0.0"
 
 # Create non-root user
@@ -46,9 +46,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/hop-on/public ./apps/hop-on/
 
 USER nextjs
 
-EXPOSE 4200
+EXPOSE 3002
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:4200', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:3002', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 CMD ["node", "apps/hop-on/server.js"]

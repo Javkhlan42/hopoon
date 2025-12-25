@@ -1,57 +1,363 @@
-version: '3.8'
+version: '3.9'
 
 services:
+  # Database
   postgres:
-    image: postgis/postgis:13-3.1
+    image: postgis/postgis:16-3.4
     container_name: hopon-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hopon
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-hopon}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./db/seeds:/docker-entrypoint-initdb.d/seeds
+      - ../db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../db/seeds:/docker-entrypoint-initdb.d/seeds:ro
     networks:
       - hopon-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d hopon']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
+  # Cache & Message Broker
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     container_name: hopon-redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     ports:
-      - "6379:6379"
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
     networks:
       - hopon-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
+  # Backend Services
   api-gateway:
     build:
       context: ../../
       dockerfile: infra/docker/api-gateway.Dockerfile
+      args:
+        NODE_ENV: production
     container_name: hopon-api-gateway
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3000
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: hopon
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+    ports:
+      - '${API_GATEWAY_PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    build:
+      context: ../../
+      dockerfile: infra/docker/auth-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hopon-auth-service
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    ports:
+      - '${AUTH_SERVICE_PORT:-3001}:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  booking-service:
+    build:
+      context: ../../
+      dockerfile: infra/docker/booking-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hopon-booking-service
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
-      - "3000:3000"
+      - '${BOOKING_SERVICE_PORT:-3003}:3003'
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - hopon-network
-    volumes:
-      - ../../apps/services/api-gateway:/app/apps/services/api-gateway
-      - /app/node_modules
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ride-service:
+    build:
+      context: ../../
+      dockerfile: infra/docker/ride-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hopon-ride-service
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - '${RIDE_SERVICE_PORT:-3004}:3004'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  payment-service:
+    build:
+      context: ../../
+      dockerfile: infra/docker/payment-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hopon-payment-service
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    ports:
+      - '${PAYMENT_SERVICE_PORT:-3005}:3005'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  notification-service:
+    build:
+      context: ../../
+      dockerfile: infra/docker/notification-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hopon-notification-service
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@hopon.com}
+    ports:
+      - '${NOTIFICATION_SERVICE_PORT:-3006}:3006'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  chat-service:
+    build:
+      context: ../../
+      dockerfile: infra/docker/chat-service.Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hopon-chat-service
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-hopon}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - '${CHAT_SERVICE_PORT:-3007}:3007'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Frontend Services
+  admin-web:
+    build:
+      context: ../../
+      dockerfile: infra/docker/admin-web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://api-gateway:3000/api/v1
+    container_name: hopon-admin-web
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}
+      PORT: 3010
+    ports:
+      - '${ADMIN_WEB_PORT:-3010}:3010'
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   web:
     build:
@@ -59,22 +365,56 @@ services:
       dockerfile: infra/docker/web.Dockerfile
     container_name: hopon-web
     environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://api-gateway:3000/api/v1
     ports:
-      - "4200:4200"
+      - '4200:4200'
     depends_on:
       - api-gateway
     networks:
       - hopon-network
-    volumes:
-      - ../../apps/hop-on:/app/apps/hop-on
-      - /app/node_modules
+    restart: unless-stopped
+
+  hop-on:
+    build:
+      context: ../../
+      dockerfile: infra/docker/hop-on.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://api-gateway:3000/api/v1
+    container_name: hopon-hop-on
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+      PORT: 3002
+    ports:
+      - '${HOP_ON_PORT:-3002}:3002'
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - hopon-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
 
 networks:
   hopon-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
