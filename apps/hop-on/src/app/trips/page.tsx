@@ -281,7 +281,9 @@ export default function TripsPage() {
                       {/* Ride Info */}
                       <div className="flex items-center justify-between mb-3">
                         <Badge
-                          variant={ride.status === 'active' ? 'default' : 'outline'}
+                          variant={
+                            ride.status === 'active' ? 'default' : 'outline'
+                          }
                         >
                           {ride.status}
                         </Badge>
@@ -340,59 +342,66 @@ export default function TripsPage() {
                                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                               >
                                 <div className="flex items-center gap-2 flex-1">
-                              <Avatar className="w-8 h-8">
-                                <AvatarImage
-                                  src={booking.passenger?.profile_photo}
-                                />
-                                <AvatarFallback>
-                                  {booking.passenger?.name?.charAt(0) || 'P'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="text-sm font-medium">
-                                  {booking.passenger?.name || 'Зорчигч'}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {booking.seats} суудал •{' '}
-                                  {formatCurrency(booking.total_price)}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(booking.status)}
-
-                                {booking.status === 'pending' && (
-                                  <div className="flex gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleReject(booking.id)}
-                                      className="h-7 w-7 p-0"
-                                    >
-                                      <XCircle className="w-4 h-4 text-red-600" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleApprove(booking.id)}
-                                      className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
-                                    >
-                                      <CheckCircle className="w-4 h-4" />
-                                    </Button>
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage
+                                      src={booking.passenger?.profile_photo}
+                                    />
+                                    <AvatarFallback>
+                                      {booking.passenger?.name?.charAt(0) ||
+                                        'P'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium">
+                                      {booking.passenger?.name || 'Зорчигч'}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {booking.seats} суудал •{' '}
+                                      {formatCurrency(booking.total_price)}
+                                    </div>
                                   </div>
-                                )}
+                                  <div className="flex items-center gap-2">
+                                    {getStatusBadge(booking.status)}
+
+                                    {booking.status === 'pending' && (
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            handleReject(booking.id)
+                                          }
+                                          className="h-7 w-7 p-0"
+                                        >
+                                          <XCircle className="w-4 h-4 text-red-600" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={() =>
+                                            handleApprove(booking.id)
+                                          }
+                                          className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
+                                        >
+                                          <CheckCircle className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
-                    )}
-                  </div>
                     </div>
 
                     {/* Right: Mini Map */}
                     <div className="w-64 flex-shrink-0">
                       <RideMiniMap
                         originAddress={ride.origin_address || 'Улаанбаатар'}
-                        destinationAddress={ride.destination_address || 'Дархан'}
+                        destinationAddress={
+                          ride.destination_address || 'Дархан'
+                        }
                         originLat={ride.origin_lat}
                         originLng={ride.origin_lng}
                         destinationLat={ride.destination_lat}
@@ -429,11 +438,15 @@ export default function TripsPage() {
                     <div className="space-y-2 mb-3">
                       <div className="flex items-center gap-2 text-sm">
                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                        <span>{booking.ride?.origin_address || 'Улаанбаатар'}</span>
+                        <span>
+                          {booking.ride?.origin_address || 'Улаанбаатар'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                        <span>{booking.ride?.destination_address || 'Дархан'}</span>
+                        <span>
+                          {booking.ride?.destination_address || 'Дархан'}
+                        </span>
                       </div>
                     </div>
 
@@ -455,7 +468,9 @@ export default function TripsPage() {
                     {booking.ride?.driver && (
                       <div className="flex items-center gap-2 mb-3 pb-3 border-b">
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={booking.ride.driver.profile_photo} />
+                          <AvatarImage
+                            src={booking.ride.driver.profile_photo}
+                          />
                           <AvatarFallback>
                             {booking.ride.driver.name.charAt(0)}
                           </AvatarFallback>
@@ -481,7 +496,9 @@ export default function TripsPage() {
                   {/* Right: Mini Map */}
                   <div className="w-64 flex-shrink-0">
                     <RideMiniMap
-                      originAddress={booking.ride?.origin_address || 'Улаанбаатар'}
+                      originAddress={
+                        booking.ride?.origin_address || 'Улаанбаатар'
+                      }
                       destinationAddress={
                         booking.ride?.destination_address || 'Дархан'
                       }
