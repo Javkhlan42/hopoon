@@ -1,0 +1,56 @@
+name: Build and Deploy Admin Web
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'API Gateway URL'
+        required: true
+        default: 'http://a877086951e3f4aef8ca760d47da2d5e-1712593589.ap-southeast-1.elb.amazonaws.com:3000'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./infra/docker/admin-web-dev.Dockerfile
+          push: true
+          tags: 290817091060.dkr.ecr.ap-southeast-1.amazonaws.com/hopon-admin-web:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ github.event.inputs.api_url }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name hopon-cluster-v2 --region ap-southeast-1
+
+      - name: Restart admin-web deployment
+        run: |
+          kubectl rollout restart deployment/admin-web -n hopon
+          kubectl rollout status deployment/admin-web -n hopon --timeout=5m
