@@ -20,7 +20,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_ENV=production
 
 WORKDIR /app/apps/admin-web
-RUN npm run build 2>/dev/null || true
+RUN npm run build
 
 # Run application
 FROM base AS runner
