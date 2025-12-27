@@ -1,24 +1,42 @@
-# Fast development build for admin-web
+# Optimized admin-web build
 FROM node:20-alpine AS base
-WORKDIR /app/apps/admin-web
+WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
-# Copy only admin-web files
-COPY apps/admin-web/package.json apps/admin-web/package-lock.json* ./
+# Install dependencies
+FROM base AS deps
+WORKDIR /app/apps/admin-web
+COPY apps/admin-web/package*.json ./
+RUN npm install --legacy-peer-deps --no-audit --no-fund --prefer-offline --progress=false
 
-# Install dependencies with cache
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --legacy-peer-deps --omit=optional 2>/dev/null || npm install --legacy-peer-deps --omit=optional
-
-# Copy app source
-COPY apps/admin-web .
+# Build application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/apps/admin-web/node_modules ./apps/admin-web/node_modules
+COPY apps/admin-web ./apps/admin-web
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NODE_ENV=development
+ENV NODE_ENV=production
+
+WORKDIR /app/apps/admin-web
+RUN npm run build 2>/dev/null || true
+
+# Run application
+FROM base AS runner
+WORKDIR /app/apps/admin-web
+ENV NODE_ENV=production
 ENV PORT=3100
 ENV HOSTNAME="0.0.0.0"
 
+COPY --from=builder /app/apps/admin-web/.next ./.next
+COPY --from=builder /app/apps/admin-web/public ./public
+COPY --from=builder /app/apps/admin-web/node_modules ./node_modules
+COPY --from=builder /app/apps/admin-web/package.json ./package.json
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 EXPOSE 3100
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]
