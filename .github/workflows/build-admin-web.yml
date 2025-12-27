@@ -33,7 +33,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./infra/docker/admin-web-dev.Dockerfile
+          file: ./Dockerfile.admin-web
           push: true
           tags: 290817091060.dkr.ecr.ap-southeast-1.amazonaws.com/hopon-admin-web:latest
           build-args: |
