@@ -1,33 +1,29 @@
-# Admin-web Dockerfile (build from monorepo root)
+# Admin-web Dockerfile - Optimized
 FROM node:20-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
-# Install dependencies
+# Install dependencies with cache
 FROM base AS deps
-# Copy root workspace files
-COPY package.json package-lock.json* nx.json tsconfig.base.json ./
-COPY packages ./packages
-COPY apps/admin-web ./apps/admin-web
+WORKDIR /app/apps/admin-web
+COPY apps/admin-web/package*.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps --prefer-offline 2>/dev/null || \
+    npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund
 
-# Install dependencies
-WORKDIR /app
-RUN npm install --legacy-peer-deps
-
-# Development runtime
+# Copy source
 FROM base AS runner
-WORKDIR /app
+WORKDIR /app/apps/admin-web
 
 ENV NODE_ENV=development
 ENV PORT=3100
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy everything from deps
-COPY --from=deps /app ./
+# Copy node_modules and source
+COPY --from=deps /app/apps/admin-web/node_modules ./node_modules
+COPY apps/admin-web .
 
-WORKDIR /app/apps/admin-web
 EXPOSE 3100
 
-# Run dev server
 CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]
