@@ -30,7 +30,6 @@ ENV PORT=3100
 ENV HOSTNAME="0.0.0.0"
 
 COPY --from=builder /app/apps/admin-web/.next ./.next
-COPY --from=builder /app/apps/admin-web/public ./public
 COPY --from=builder /app/apps/admin-web/node_modules ./node_modules
 COPY --from=builder /app/apps/admin-web/package.json ./package.json
 
