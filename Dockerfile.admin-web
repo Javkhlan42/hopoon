@@ -21,8 +21,8 @@ ENV PORT=3100
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy root tsconfig
-COPY tsconfig.base.json ./
+# Copy root tsconfig to correct path
+COPY tsconfig.base.json ./tsconfig.base.json
 
 # Copy node_modules and source
 COPY --from=deps /app/apps/admin-web/node_modules ./apps/admin-web/node_modules
