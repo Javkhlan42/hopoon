@@ -12,6 +12,8 @@ RUN npm install --legacy-peer-deps --no-audit --no-fund --prefer-offline --progr
 # Build application
 FROM base AS builder
 WORKDIR /app
+# Copy root tsconfig
+COPY tsconfig.base.json ./
 COPY --from=deps /app/apps/admin-web/node_modules ./apps/admin-web/node_modules
 COPY apps/admin-web ./apps/admin-web
 
